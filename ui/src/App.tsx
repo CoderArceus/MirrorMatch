@@ -31,6 +31,14 @@ type SessionStats = {
   totalTurns: number;
 };
 
+type Replay = {
+  id: string;
+  seed: number;
+  actions: TurnActions[];
+  finalState: GameState;
+  timestamp: number;
+};
+
 // ============================================================================
 // Telemetry: Local Storage Stats
 // ============================================================================
@@ -74,6 +82,59 @@ function resetStats(): void {
 }
 
 // ============================================================================
+// Replay System: Storage and Retrieval
+// ============================================================================
+
+const REPLAYS_KEY = 'mirrormatch-replays';
+const MAX_REPLAYS = 50; // Keep last 50 games
+
+function loadReplays(): Replay[] {
+  const stored = localStorage.getItem(REPLAYS_KEY);
+  if (stored) {
+    try {
+      return JSON.parse(stored);
+    } catch {
+      return [];
+    }
+  }
+  return [];
+}
+
+function saveReplay(replay: Replay): void {
+  const replays = loadReplays();
+  replays.unshift(replay); // Add to front
+  
+  // Keep only last MAX_REPLAYS
+  if (replays.length > MAX_REPLAYS) {
+    replays.splice(MAX_REPLAYS);
+  }
+  
+  localStorage.setItem(REPLAYS_KEY, JSON.stringify(replays));
+}
+
+function clearReplays(): void {
+  localStorage.removeItem(REPLAYS_KEY);
+}
+
+// ============================================================================
+// Replay Engine: Deterministic State Reconstruction
+// ============================================================================
+
+function replayGame(seed: number, actions: TurnActions[]): GameState {
+  let state = createInitialGameState(seed);
+  
+  for (const turnActions of actions) {
+    state = resolveTurn(state, turnActions);
+    
+    if (state.gameOver) {
+      break;
+    }
+  }
+  
+  return state;
+}
+
+// ============================================================================
 // Game Over Explanation
 // ============================================================================
 
@@ -101,8 +162,183 @@ function getWinnerExplanation(state: GameState): string {
   return `${winnerName} won 2 out of 3 lanes.`;
 }
 
+// ============================================================================
+// Lane Outcome Analysis
+// ============================================================================
+
+type LaneOutcome = {
+  winner: 'player1' | 'player2' | 'tie';
+  reason: string;
+  p1Total: number;
+  p2Total: number;
+};
+
+function analyzeLane(p1Lane: typeof player1.lanes[0], p2Lane: typeof player2.lanes[0]): LaneOutcome {
+  const p1Total = p1Lane.total;
+  const p2Total = p2Lane.total;
+  
+  // Both bust = tie
+  if (p1Lane.busted && p2Lane.busted) {
+    return {
+      winner: 'tie',
+      reason: 'Both players busted',
+      p1Total,
+      p2Total,
+    };
+  }
+  
+  // P1 busted = P2 wins
+  if (p1Lane.busted) {
+    return {
+      winner: 'player2',
+      reason: 'Player 1 busted',
+      p1Total,
+      p2Total,
+    };
+  }
+  
+  // P2 busted = P1 wins
+  if (p2Lane.busted) {
+    return {
+      winner: 'player1',
+      reason: 'Player 2 busted',
+      p1Total,
+      p2Total,
+    };
+  }
+  
+  // Check for exact 21
+  if (p1Total === 21 && p2Total !== 21) {
+    return {
+      winner: 'player1',
+      reason: 'Player 1 hit exact 21',
+      p1Total,
+      p2Total,
+    };
+  }
+  
+  if (p2Total === 21 && p1Total !== 21) {
+    return {
+      winner: 'player2',
+      reason: 'Player 2 hit exact 21',
+      p1Total,
+      p2Total,
+    };
+  }
+  
+  if (p1Total === 21 && p2Total === 21) {
+    return {
+      winner: 'tie',
+      reason: 'Both hit exact 21',
+      p1Total,
+      p2Total,
+    };
+  }
+  
+  // Neither busted - compare totals
+  if (p1Total > p2Total) {
+    return {
+      winner: 'player1',
+      reason: `Player 1 closer to 21 (${p1Total} > ${p2Total})`,
+      p1Total,
+      p2Total,
+    };
+  }
+  
+  if (p2Total > p1Total) {
+    return {
+      winner: 'player2',
+      reason: `Player 2 closer to 21 (${p2Total} > ${p1Total})`,
+      p1Total,
+      p2Total,
+    };
+  }
+  
+  // Equal totals = tie
+  return {
+    winner: 'tie',
+    reason: `Tied at ${p1Total}`,
+    p1Total,
+    p2Total,
+  };
+}
+
+// ============================================================================
+// Draw Classification
+// ============================================================================
+
+type DrawReason =
+  | 'equal_lanes'
+  | 'tiebreaker_equal'
+  | 'all_locked'
+  | 'deck_exhausted';
+
+function classifyDraw(state: GameState): { type: DrawReason; explanation: string } {
+  if (!state.winner && state.gameOver) {
+    const p1 = state.players[0];
+    const p2 = state.players[1];
+    
+    // Analyze all lanes
+    const outcomes = [
+      analyzeLane(p1.lanes[0], p2.lanes[0]),
+      analyzeLane(p1.lanes[1], p2.lanes[1]),
+      analyzeLane(p1.lanes[2], p2.lanes[2]),
+    ];
+    
+    const p1Wins = outcomes.filter(o => o.winner === 'player1').length;
+    const p2Wins = outcomes.filter(o => o.winner === 'player2').length;
+    const ties = outcomes.filter(o => o.winner === 'tie').length;
+    
+    // Case 1: Each won 1 lane, 1 tie
+    if (p1Wins === 1 && p2Wins === 1 && ties === 1) {
+      return {
+        type: 'equal_lanes',
+        explanation: 'Each player won 1 lane, with 1 lane tied. This is a perfect equilibrium.',
+      };
+    }
+    
+    // Case 2: Each won 1 lane, tiebreaker equal
+    if (p1Wins === 1 && p2Wins === 1 && ties === 0) {
+      return {
+        type: 'tiebreaker_equal',
+        explanation: 'Each player won 1 lane. Tiebreaker compared winning lane values, which were equal.',
+      };
+    }
+    
+    // Case 3: All lanes tied
+    if (ties === 3) {
+      return {
+        type: 'equal_lanes',
+        explanation: 'All three lanes ended in ties. Perfect symmetry.',
+      };
+    }
+    
+    // Case 4: Game ended due to conditions
+    if (state.deck.length === 0 && state.queue.length === 0) {
+      return {
+        type: 'deck_exhausted',
+        explanation: 'Deck exhausted with lanes in tied state.',
+      };
+    }
+    
+    if (p1.lanes.every(l => l.locked) && p2.lanes.every(l => l.locked)) {
+      return {
+        type: 'all_locked',
+        explanation: 'All lanes locked with equal outcomes.',
+      };
+    }
+  }
+  
+  return {
+    type: 'equal_lanes',
+    explanation: 'Game reached a solved terminal state with equal scores.',
+  };
+}
+
 function App() {
-  const [gameState, setGameState] = useState<GameState>(() => createInitialGameState(Date.now()));
+  const [gameSeed] = useState<number>(() => Date.now());
+  const [gameState, setGameState] = useState<GameState>(() => createInitialGameState(gameSeed));
+  const [actionHistory, setActionHistory] = useState<TurnActions[]>([]);
   const [pendingActions, setPendingActions] = useState<PendingActions>({});
   const [activePlayer, setActivePlayer] = useState<'player1' | 'player2'>('player1');
   const [stats, setStats] = useState<SessionStats>(loadStats);
@@ -111,11 +347,23 @@ function App() {
   const player1 = gameState.players[0];
   const player2 = gameState.players[1];
 
-  // Record game stats when it ends (only once)
+  // Record game stats and replay when it ends (only once)
   useEffect(() => {
     if (gameState.gameOver && !gameRecorded) {
+      // Record stats
       recordGame(gameState);
       setStats(loadStats());
+      
+      // Save replay
+      const replay: Replay = {
+        id: `${gameSeed}-${Date.now()}`,
+        seed: gameSeed,
+        actions: actionHistory,
+        finalState: gameState,
+        timestamp: Date.now(),
+      };
+      saveReplay(replay);
+      
       setGameRecorded(true);
 
       // DEBUG: Log winner determination details
@@ -247,6 +495,10 @@ function App() {
 
       const newState = resolveTurn(gameState, turnActions);
       setGameState(newState);
+      
+      // Record action in history for replay
+      setActionHistory([...actionHistory, turnActions]);
+      
       setPendingActions({});
       setActivePlayer('player1');
     }
@@ -254,7 +506,9 @@ function App() {
 
   // Reset game
   const resetGame = () => {
-    setGameState(createInitialGameState(Date.now()));
+    const newSeed = Date.now();
+    setGameState(createInitialGameState(newSeed));
+    setActionHistory([]);
     setPendingActions({});
     setActivePlayer('player1');
     setGameRecorded(false);
@@ -429,10 +683,45 @@ function App() {
               )}
             </div>
 
+            {/* Lane-by-Lane Breakdown */}
+            <div className="lane-breakdown">
+              <h3>Lane-by-Lane Results</h3>
+              <div className="lane-results">
+                {[0, 1, 2].map(i => {
+                  const outcome = analyzeLane(gameState.players[0].lanes[i], gameState.players[1].lanes[i]);
+                  const laneName = String.fromCharCode(65 + i);
+                  return (
+                    <div key={i} className={`lane-result ${outcome.winner}`}>
+                      <div className="lane-result-header">
+                        <strong>Lane {laneName}</strong>
+                        {outcome.winner === 'player1' && <span className="winner-badge">P1 ✓</span>}
+                        {outcome.winner === 'player2' && <span className="winner-badge">P2 ✓</span>}
+                        {outcome.winner === 'tie' && <span className="tie-badge">TIE</span>}
+                      </div>
+                      <div className="lane-result-scores">
+                        P1: {outcome.p1Total} | P2: {outcome.p2Total}
+                      </div>
+                      <div className="lane-result-reason">{outcome.reason}</div>
+                    </div>
+                  );
+                })}
+              </div>
+            </div>
+
+            {/* Draw Diagnostics */}
+            {!gameState.winner && (
+              <div className="draw-diagnostics">
+                <h3>🤝 Draw Analysis</h3>
+                <p className="draw-classification">{classifyDraw(gameState).explanation}</p>
+                <p className="draw-note">
+                  This represents a <strong>solved equilibrium</strong> state where neither player could force an advantage.
+                </p>
+              </div>
+            )}
+
             <div className="game-over-explanation">
               <h3>Why did the game end?</h3>
               <p className="end-reason">{getEndReason(gameState)}</p>
-              <p className="winner-reason">{getWinnerExplanation(gameState)}</p>
               <p className="turn-count">Game lasted {gameState.turnNumber - 1} turns.</p>
             </div>
 

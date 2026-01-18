@@ -343,6 +343,119 @@ body {
   margin-bottom: 24px;
 }
 
+/* Lane Breakdown */
+.lane-breakdown {
+  background: #2a2a2a;
+  border-radius: 4px;
+  padding: 20px;
+  margin: 20px 0;
+}
+
+.lane-breakdown h3 {
+  font-size: 18px;
+  color: #4a9eff;
+  margin-bottom: 16px;
+  text-align: center;
+}
+
+.lane-results {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 12px;
+}
+
+.lane-result {
+  background: #333;
+  border-radius: 4px;
+  padding: 12px;
+  border: 2px solid #555;
+}
+
+.lane-result.player1 {
+  border-color: #4a9eff;
+}
+
+.lane-result.player2 {
+  border-color: #ff6b35;
+}
+
+.lane-result.tie {
+  border-color: #ffaa00;
+}
+
+.lane-result-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 8px;
+  font-size: 14px;
+}
+
+.winner-badge {
+  background: #76ff76;
+  color: #1a1a1a;
+  padding: 2px 8px;
+  border-radius: 3px;
+  font-size: 11px;
+  font-weight: bold;
+}
+
+.tie-badge {
+  background: #ffaa00;
+  color: #1a1a1a;
+  padding: 2px 8px;
+  border-radius: 3px;
+  font-size: 11px;
+  font-weight: bold;
+}
+
+.lane-result-scores {
+  font-size: 16px;
+  font-weight: bold;
+  color: #4a9eff;
+  margin-bottom: 6px;
+}
+
+.lane-result-reason {
+  font-size: 12px;
+  color: #aaa;
+  font-style: italic;
+}
+
+/* Draw Diagnostics */
+.draw-diagnostics {
+  background: #2a2a2a;
+  border-radius: 4px;
+  padding: 20px;
+  margin: 20px 0;
+  border: 2px solid #ffaa00;
+}
+
+.draw-diagnostics h3 {
+  font-size: 18px;
+  color: #ffaa00;
+  margin-bottom: 12px;
+  text-align: center;
+}
+
+.draw-classification {
+  font-size: 16px;
+  color: #e0e0e0;
+  margin-bottom: 12px;
+  line-height: 1.5;
+}
+
+.draw-note {
+  font-size: 14px;
+  color: #aaa;
+  font-style: italic;
+  text-align: center;
+}
+
+.draw-note strong {
+  color: #ffaa00;
+}
+
 .game-over-explanation {
   background: #2a2a2a;
   border-radius: 4px;
