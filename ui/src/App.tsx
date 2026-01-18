@@ -16,6 +16,8 @@ import type {
   TurnActions 
 } from '../../engine/src';
 
+import { chooseAIAction, AIDifficulty } from './ai';
+
 import './App.css';
 
 type PendingActions = {
@@ -343,6 +345,11 @@ function App() {
   const [activePlayer, setActivePlayer] = useState<'player1' | 'player2'>('player1');
   const [stats, setStats] = useState<SessionStats>(loadStats);
   const [gameRecorded, setGameRecorded] = useState(false);
+  
+  // AI Mode
+  const [vsAI, setVsAI] = useState<boolean>(false);
+  const [aiDifficulty, setAIDifficulty] = useState<AIDifficulty>('normal');
+  const [aiThinking, setAIThinking] = useState<boolean>(false);
 
   const player1 = gameState.players[0];
   const player2 = gameState.players[1];
@@ -517,6 +524,40 @@ function App() {
     }
   };
 
+  // AI Turn Handler
+  useEffect(() => {
+    if (!vsAI || gameState.gameOver || aiThinking) return;
+    if (activePlayer !== 'player2' || pendingActions.player2) return;
+    
+    // AI's turn (Player 2)
+    setAIThinking(true);
+    
+    // Delay AI decision for UX (feels more natural)
+    setTimeout(() => {
+      const aiAction = chooseAIAction(gameState, 'player2', aiDifficulty);
+      const newPending = { ...pendingActions, player2: aiAction };
+      setPendingActions(newPending);
+      
+      // If both actions ready, resolve immediately
+      if (newPending.player1) {
+        const turnActions: TurnActions = {
+          playerActions: [
+            { playerId: 'player1', action: newPending.player1 },
+            { playerId: 'player2', action: aiAction },
+          ],
+        };
+        
+        const newState = resolveTurn(gameState, turnActions);
+        setGameState(newState);
+        setActionHistory([...actionHistory, turnActions]);
+        setPendingActions({});
+        setActivePlayer('player1');
+      }
+      
+      setAIThinking(false);
+    }, 500); // 500ms delay for AI "thinking"
+  }, [vsAI, gameState, activePlayer, pendingActions, aiThinking, aiDifficulty, actionHistory]);
+
   // Reset game
   const resetGame = () => {
     const newSeed = Date.now();
@@ -525,6 +566,7 @@ function App() {
     setPendingActions({});
     setActivePlayer('player1');
     setGameRecorded(false);
+    setAIThinking(false);
   };
 
   // Reset stats
@@ -597,13 +639,45 @@ function App() {
                 {' '}GAME OVER - Winner: {gameState.winner || 'DRAW'}
               </span>
             )}
+            {aiThinking && (
+              <span className="ai-thinking"> 🤖 AI thinking...</span>
+            )}
+          </div>
+          
+          {/* AI Mode Controls */}
+          <div className="game-mode-controls">
+            <label className="mode-toggle">
+              <input 
+                type="checkbox" 
+                checked={vsAI} 
+                onChange={(e) => {
+                  setVsAI(e.target.checked);
+                  resetGame();
+                }}
+                disabled={!gameState.gameOver && gameState.turnNumber > 1}
+              />
+              <span>vs AI</span>
+            </label>
+            
+            {vsAI && (
+              <select 
+                value={aiDifficulty} 
+                onChange={(e) => setAIDifficulty(e.target.value as AIDifficulty)}
+                disabled={!gameState.gameOver && gameState.turnNumber > 1}
+                className="difficulty-select"
+              >
+                <option value="easy">Easy</option>
+                <option value="normal">Normal</option>
+                <option value="hard">Hard</option>
+              </select>
+            )}
           </div>
         </div>
 
         {/* AREA 2: Player Lanes */}
         <div className="players">
-          {renderPlayer(player1, 'Player 1', activePlayer === 'player1')}
-          {renderPlayer(player2, 'Player 2', activePlayer === 'player2')}
+          {renderPlayer(player1, 'Player 1 (You)', activePlayer === 'player1')}
+          {renderPlayer(player2, vsAI ? 'AI Opponent' : 'Player 2', activePlayer === 'player2')}
         </div>
 
         {/* AREA 3: Card Queue */}
@@ -624,8 +698,8 @@ function App() {
         {!gameState.gameOver && (
           <div className="controls-section">
             <div className="active-player-toggle">
-              <strong>Active Player: {activePlayer === 'player1' ? 'Player 1' : 'Player 2'}</strong>
-              {!pendingActions[activePlayer] && (
+              <strong>Active Player: {activePlayer === 'player1' ? 'Player 1 (You)' : (vsAI ? 'AI' : 'Player 2')}</strong>
+              {!vsAI && !pendingActions[activePlayer] && (
                 <button
                   onClick={() => setActivePlayer(activePlayer === 'player1' ? 'player2' : 'player1')}
                   className="toggle-btn"
