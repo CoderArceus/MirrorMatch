@@ -1,14 +1,32 @@
 /**
  * MirrorMatch Engine - Public API
  * All exports for external consumers (UI, server, etc.)
+ * 
+ * CRITICAL: This is the ONLY entry point for external code.
+ * Do not import directly from internal modules.
  */
 
 // Core types
-export type { Card, LaneState, PlayerState, GameState } from './types';
-export type { PlayerAction, TurnActions, TakeAction, BurnAction, StandAction } from './actions';
+export type {
+  Card,
+  LaneState,
+  PlayerState,
+  GameState,
+} from './types';
+
+// Action types
+export type {
+  PlayerAction,
+  TurnActions,
+  TakeAction,
+  BurnAction,
+  StandAction,
+} from './actions';
+
+// Replay types
 export type { Replay } from './replay';
 
-// State management
+// State management functions
 export { createInitialGameState, calculateLaneTotal } from './state';
 
 // Action validation
