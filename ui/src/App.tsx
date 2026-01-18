@@ -548,7 +548,13 @@ function App() {
   });
   const [actionHistory, setActionHistory] = useState<TurnActions[]>(() => urlMatch?.actions || []);
   const [pendingActions, setPendingActions] = useState<PendingActions>({});
-  const [activePlayer, setActivePlayer] = useState<'player1' | 'player2'>('player1');
+  const [activePlayer, setActivePlayer] = useState<'player1' | 'player2'>(() => {
+    // In async mode, activePlayer should match who needs to act
+    if (urlMatch) {
+      return urlMatch.currentPlayer;
+    }
+    return 'player1';
+  });
   const [stats, setStats] = useState<SessionStats>(loadStats);
   const [gameRecorded, setGameRecorded] = useState(false);
   
