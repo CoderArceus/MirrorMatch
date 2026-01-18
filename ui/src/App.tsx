@@ -932,9 +932,14 @@ function App() {
                   };
                   const url = createShareableURL(match);
                   navigator.clipboard.writeText(url).then(() => {
-                    alert('Challenge created! Link copied. You are Player 1.');
+                    alert('Challenge created! Link copied. Redirecting to async mode...');
+                    // Navigate to the URL to activate async mode
+                    window.location.href = url;
                   }).catch(() => {
-                    prompt('Copy this link to create a challenge:', url);
+                    const userCopied = prompt('Copy this link to create a challenge:', url);
+                    if (userCopied) {
+                      window.location.href = url;
+                    }
                   });
                 }}
                 className="create-challenge-btn"
