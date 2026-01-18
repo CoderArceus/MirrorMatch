@@ -14,19 +14,25 @@ body {
 
 .app {
   min-height: 100vh;
-  display: flex;
-  justify-content: center;
-  align-items: center;
   padding: 20px;
 }
 
 .game-container {
-  max-width: 1200px;
+  max-width: 1400px;
   width: 100%;
+  margin: 0 auto;
   background: #2a2a2a;
   border-radius: 8px;
   padding: 24px;
   box-shadow: 0 4px 12px rgba(0, 0, 0, 0.5);
+}
+
+/* Desktop: Use full available width */
+@media (min-width: 1024px) {
+  .game-container {
+    max-width: none;
+    width: calc(100vw - 80px);
+  }
 }
 
 /* AREA 1: Turn Header */
@@ -453,11 +459,41 @@ body {
 
 /* Responsive */
 @media (max-width: 768px) {
+  .app {
+    padding: 10px;
+  }
+
+  .game-container {
+    padding: 16px;
+    width: 100%;
+  }
+
   .players {
     grid-template-columns: 1fr;
   }
 
   .actions {
     grid-template-columns: 1fr;
+  }
+
+  .stats-grid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+
+  .queue {
+    flex-wrap: wrap;
+  }
+
+  .queue-card {
+    min-width: 60px;
+    padding: 16px 20px;
+    font-size: 20px;
+  }
+}
+
+/* Tablet */
+@media (min-width: 769px) and (max-width: 1023px) {
+  .game-container {
+    max-width: 900px;
   }
 }

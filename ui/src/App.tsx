@@ -120,6 +120,69 @@ function App() {
     }
   }, [gameState.gameOver, gameRecorded]);
 
+  // Check if active player has any legal actions
+  const hasLegalActions = (playerId: string): boolean => {
+    if (gameState.gameOver) return false;
+
+    const player = gameState.players.find(p => p.id === playerId);
+    if (!player) return false;
+
+    // Check if any Take action is legal
+    for (let lane = 0; lane < player.lanes.length; lane++) {
+      if (isActionLegal(gameState, playerId, { type: 'take', targetLane: lane })) {
+        return true;
+      }
+    }
+
+    // Check if Burn is legal
+    if (isActionLegal(gameState, playerId, { type: 'burn' })) {
+      return true;
+    }
+
+    // Check if any Stand action is legal
+    for (let lane = 0; lane < player.lanes.length; lane++) {
+      if (isActionLegal(gameState, playerId, { type: 'stand', targetLane: lane })) {
+        return true;
+      }
+    }
+
+    return false;
+  };
+
+  // Auto-pass if active player has no legal actions
+  useEffect(() => {
+    if (gameState.gameOver) return;
+
+    const activeHasActions = hasLegalActions(activePlayer);
+    const otherPlayer = activePlayer === 'player1' ? 'player2' : 'player1';
+    const otherHasActions = hasLegalActions(otherPlayer);
+
+    // If active player has no actions but hasn't submitted yet
+    if (!activeHasActions && !pendingActions[activePlayer]) {
+      // Auto-submit a Stand action on first available lane (will be validated and may fail)
+      const player = gameState.players.find(p => p.id === activePlayer);
+      if (player) {
+        const firstUnlockedLane = player.lanes.findIndex(l => !l.locked);
+        if (firstUnlockedLane >= 0) {
+          // Try to stand on first unlocked lane
+          const standAction: PlayerAction = { type: 'stand', targetLane: firstUnlockedLane };
+          setPendingActions({ ...pendingActions, [activePlayer]: standAction });
+          
+          // Switch to other player
+          if (!pendingActions[otherPlayer]) {
+            setActivePlayer(otherPlayer);
+          }
+        }
+      }
+    }
+
+    // If both players have no actions and the game isn't over, force resolution
+    if (!activeHasActions && !otherHasActions && (!pendingActions.player1 || !pendingActions.player2)) {
+      // Both players stuck - this shouldn't happen with proper validators, but handle it
+      console.warn('Both players have no legal actions - game should have ended');
+    }
+  }, [gameState, activePlayer, pendingActions]);
+
   // Check if an action is legal for the active player
   const checkLegal = (action: PlayerAction): boolean => {
     return isActionLegal(gameState, activePlayer, action);
