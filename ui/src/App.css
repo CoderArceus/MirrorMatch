@@ -112,6 +112,23 @@ body {
   border-color: #666;
 }
 
+.create-challenge-btn {
+  padding: 8px 16px;
+  background: #76ff76;
+  border: 2px solid #66ee66;
+  border-radius: 4px;
+  color: #1a1a1a;
+  font-size: 14px;
+  font-weight: bold;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.create-challenge-btn:hover {
+  background: #66ee66;
+  transform: translateY(-1px);
+}
+
 .game-over {
   color: #ffaa00;
   animation: pulse 1s infinite;

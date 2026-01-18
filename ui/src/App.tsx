@@ -920,6 +920,28 @@ function App() {
                 <option value="hard">Hard</option>
               </select>
             )}
+            
+            {/* Create Async Challenge */}
+            {!asyncMode && !vsAI && gameState.turnNumber === 1 && (
+              <button
+                onClick={() => {
+                  const match: EncodedMatch = {
+                    seed: gameSeed,
+                    actions: [],
+                    version: 1,
+                  };
+                  const url = createShareableURL(match);
+                  navigator.clipboard.writeText(url).then(() => {
+                    alert('Challenge created! Link copied. You are Player 1.');
+                  }).catch(() => {
+                    prompt('Copy this link to create a challenge:', url);
+                  });
+                }}
+                className="create-challenge-btn"
+              >
+                🔗 Create Async Challenge
+              </button>
+            )}
           </div>
         </div>
 
