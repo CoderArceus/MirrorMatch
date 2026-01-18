@@ -18,6 +18,9 @@ import type {
 
 import { chooseAIAction } from './ai';
 import type { AIDifficulty } from './ai';
+import { getMatchFromURL, createShareableURL } from './utils/encodeMatch';
+import type { EncodedMatch } from './utils/encodeMatch';
+import { runReplay } from '../../engine/src';
 
 import './App.css';
 
@@ -530,9 +533,20 @@ function detectSkillBadge(state: GameState, playerId: string): SkillBadge | null
 }
 
 function App() {
-  const [gameSeed] = useState<number>(() => Date.now());
-  const [gameState, setGameState] = useState<GameState>(() => createInitialGameState(gameSeed));
-  const [actionHistory, setActionHistory] = useState<TurnActions[]>([]);
+  // Async PvP: Load match from URL if present
+  const urlMatch = getMatchFromURL();
+  const initialSeed = urlMatch?.seed || Date.now();
+  
+  const [gameSeed] = useState<number>(() => initialSeed);
+  const [gameState, setGameState] = useState<GameState>(() => {
+    if (urlMatch) {
+      // Reconstruct state from replay
+      const replay = { initialState: createInitialGameState(urlMatch.seed), turns: urlMatch.actions };
+      return runReplay(replay);
+    }
+    return createInitialGameState(initialSeed);
+  });
+  const [actionHistory, setActionHistory] = useState<TurnActions[]>(() => urlMatch?.actions || []);
   const [pendingActions, setPendingActions] = useState<PendingActions>({});
   const [activePlayer, setActivePlayer] = useState<'player1' | 'player2'>('player1');
   const [stats, setStats] = useState<SessionStats>(loadStats);
@@ -545,9 +559,31 @@ function App() {
   
   // Feedback
   const [feedbackGiven, setFeedbackGiven] = useState<boolean>(false);
+  
+  // Async PvP Mode
+  const [asyncMode] = useState<boolean>(() => urlMatch !== null);
+  const [urlError, setUrlError] = useState<string | null>(null);
+  const [myPlayerRole] = useState<'player1' | 'player2'>(() => {
+    // Determine role based on turn count
+    // Even turns (0, 2, 4...) = player1's turn to act
+    // Odd turns (1, 3, 5...) = player2's turn to act
+    if (!urlMatch) return 'player1';
+    const turnCount = urlMatch.actions.length;
+    return turnCount % 2 === 0 ? 'player1' : 'player2';
+  });
 
   const player1 = gameState.players[0];
   const player2 = gameState.players[1];
+  
+  // Check if it's my turn in async mode
+  const isMyTurn = !asyncMode || (activePlayer === myPlayerRole);
+  
+  // Validate URL match on mount
+  useEffect(() => {
+    if (urlMatch && urlMatch.version !== 1) {
+      setUrlError('Invalid match version. Please request a new link.');
+    }
+  }, [urlMatch]);
   
   // Handle feedback submission
   const submitFeedback = (type: FeedbackType) => {
@@ -694,6 +730,12 @@ function App() {
 
   // Handle action selection
   const selectAction = (action: PlayerAction) => {
+    // Async mode: enforce turn ownership
+    if (asyncMode && !isMyTurn) {
+      alert('Not your turn!');
+      return;
+    }
+    
     if (!checkLegal(action)) {
       alert('Illegal action!');
       return;
@@ -904,17 +946,29 @@ function App() {
         {/* AREA 4 & 5: Action Controls */}
         {!gameState.gameOver && (
           <div className="controls-section">
-            <div className="active-player-toggle">
-              <strong>Active Player: {activePlayer === 'player1' ? 'Player 1 (You)' : (vsAI ? 'AI' : 'Player 2')}</strong>
-              {!vsAI && !pendingActions[activePlayer] && (
-                <button
-                  onClick={() => setActivePlayer(activePlayer === 'player1' ? 'player2' : 'player1')}
-                  className="toggle-btn"
-                >
-                  Switch Player
-                </button>
-              )}
-            </div>
+            {/* Async Mode: Waiting for Opponent */}
+            {asyncMode && !isMyTurn && (
+              <div className="waiting-for-opponent">
+                <h3>⏳ Waiting for Opponent</h3>
+                <p>It's {activePlayer === 'player1' ? "Player 1's" : "Player 2's"} turn.</p>
+                <p className="hint">Share the link with your opponent to continue.</p>
+              </div>
+            )}
+            
+            {/* Normal/AI Mode or Your Turn in Async */}
+            {(!asyncMode || isMyTurn) && (
+              <>
+                <div className="active-player-toggle">
+                  <strong>Active Player: {activePlayer === 'player1' ? 'Player 1 (You)' : (vsAI ? 'AI' : 'Player 2')}</strong>
+                  {!vsAI && !asyncMode && !pendingActions[activePlayer] && (
+                    <button
+                      onClick={() => setActivePlayer(activePlayer === 'player1' ? 'player2' : 'player1')}
+                      className="toggle-btn"
+                    >
+                      Switch Player
+                    </button>
+                  )}
+                </div>
 
             <div className="actions">
               <div className="action-group">
@@ -960,6 +1014,8 @@ function App() {
                 </div>
               </div>
             </div>
+              </>
+            )}
           </div>
         )}
 
@@ -1067,6 +1123,31 @@ function App() {
                 Play Again
               </button>
             </div>
+          </div>
+        )}
+        
+        {/* Async PvP: Share Challenge Link */}
+        {asyncMode && !gameState.gameOver && isMyTurn && (
+          <div className="share-challenge">
+            <button 
+              onClick={() => {
+                const match: EncodedMatch = {
+                  seed: gameSeed,
+                  actions: actionHistory,
+                  version: 1,
+                };
+                const url = createShareableURL(match);
+                navigator.clipboard.writeText(url).then(() => {
+                  alert('Challenge link copied! Share it with your opponent.');
+                }).catch(() => {
+                  prompt('Copy this link:', url);
+                });
+              }}
+              className="share-btn"
+            >
+              📋 Copy Challenge Link
+            </button>
+            <p className="share-hint">Share this link after making your move</p>
           </div>
         )}
 
