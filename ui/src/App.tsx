@@ -16,7 +16,8 @@ import type {
   TurnActions 
 } from '../../engine/src';
 
-import { chooseAIAction, AIDifficulty } from './ai';
+import { chooseAIAction } from './ai';
+import type { AIDifficulty } from './ai';
 
 import './App.css';
 
