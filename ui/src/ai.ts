@@ -70,31 +70,57 @@ function evaluateState(state: GameState, playerId: string): number {
   score += playerWins * 100;
   score -= opponentWins * 100;
   
-  // 2. Proximity to 21 (without busting)
+  // 2. Lane value - prefer higher totals (closer to 21)
   for (const lane of player.lanes) {
     if (!lane.busted && !lane.locked) {
-      score += (21 - lane.total) * -0.5; // Closer to 21 is better
+      // Higher is better, but penalize being far from 21
+      score += lane.total * 0.5; // Reward progress
+      if (lane.total >= 17) {
+        score += 5; // Bonus for being close to 21
+      }
     }
     if (lane.busted) {
-      score -= 10; // Bust is bad
+      score -= 50; // Bust is very bad
+    }
+    if (lane.total === 21) {
+      score += 20; // Big bonus for hitting 21
     }
   }
   
   for (const lane of opponent.lanes) {
     if (!lane.busted && !lane.locked) {
-      score -= (21 - lane.total) * -0.4; // Opponent close to 21 is bad for us
+      score -= lane.total * 0.4; // Opponent progress is bad for us
+      if (lane.total >= 17) {
+        score -= 4;
+      }
+    }
+    if (lane.total === 21) {
+      score -= 15; // Opponent hitting 21 is bad
     }
   }
   
   // 3. Energy management
-  score += player.energy * 3;
-  score -= opponent.energy * 2;
+  score += player.energy * 2;
+  score -= opponent.energy * 1.5;
   
-  // 4. Locked lanes (stability)
-  const playerLocked = player.lanes.filter(l => l.locked && !l.busted).length;
-  const opponentLocked = opponent.lanes.filter(l => l.locked && !l.busted).length;
-  score += playerLocked * 2;
-  score -= opponentLocked * 1.5;
+  // 4. Locked lanes (good if high value, bad if low)
+  for (const lane of player.lanes) {
+    if (lane.locked && !lane.busted) {
+      if (lane.total >= 18) {
+        score += 10; // Good lock
+      } else if (lane.total < 10) {
+        score -= 15; // Bad lock (standing at 0 is terrible)
+      }
+    }
+  }
+  
+  for (const lane of opponent.lanes) {
+    if (lane.locked && !lane.busted) {
+      if (lane.total >= 18) {
+        score -= 8; // Opponent has good lock
+      }
+    }
+  }
   
   return score;
 }
