@@ -564,12 +564,11 @@ function App() {
   const [asyncMode] = useState<boolean>(() => urlMatch !== null);
   const [urlError, setUrlError] = useState<string | null>(null);
   const [myPlayerRole] = useState<'player1' | 'player2'>(() => {
-    // Determine role based on turn count
-    // Even turns (0, 2, 4...) = player1's turn to act
-    // Odd turns (1, 3, 5...) = player2's turn to act
+    // Determine role from URL match
     if (!urlMatch) return 'player1';
-    const turnCount = urlMatch.actions.length;
-    return turnCount % 2 === 0 ? 'player1' : 'player2';
+    // currentPlayer indicates whose turn it is
+    // Opening the link means you are that player
+    return urlMatch.currentPlayer;
   });
 
   const player1 = gameState.players[0];
@@ -928,18 +927,22 @@ function App() {
                   const match: EncodedMatch = {
                     seed: gameSeed,
                     actions: [],
+                    currentPlayer: 'player2', // Next player to act
                     version: 1,
                   };
                   const url = createShareableURL(match);
                   navigator.clipboard.writeText(url).then(() => {
-                    alert('Challenge created! Link copied. Redirecting to async mode...');
-                    // Navigate to the URL to activate async mode
-                    window.location.href = url;
+                    alert('Challenge created! Link copied to share with opponent.\n\nYou are Player 1. Send the link to Player 2.');
+                    // Navigate to Player 1's URL
+                    const p1Match: EncodedMatch = {
+                      seed: gameSeed,
+                      actions: [],
+                      currentPlayer: 'player1',
+                      version: 1,
+                    };
+                    window.location.href = createShareableURL(p1Match);
                   }).catch(() => {
-                    const userCopied = prompt('Copy this link to create a challenge:', url);
-                    if (userCopied) {
-                      window.location.href = url;
-                    }
+                    prompt('Copy this link for Player 2:', url);
                   });
                 }}
                 className="create-challenge-btn"
@@ -1158,9 +1161,12 @@ function App() {
           <div className="share-challenge">
             <button 
               onClick={() => {
+                // Determine next player
+                const nextPlayer: 'player1' | 'player2' = activePlayer === 'player1' ? 'player2' : 'player1';
                 const match: EncodedMatch = {
                   seed: gameSeed,
                   actions: actionHistory,
+                  currentPlayer: nextPlayer,
                   version: 1,
                 };
                 const url = createShareableURL(match);

@@ -12,6 +12,7 @@ import type { TurnActions } from '../../../engine/src';
 export interface EncodedMatch {
   seed: number;
   actions: TurnActions[];
+  currentPlayer: 'player1' | 'player2'; // Who should act next
   version: number; // For future compatibility
 }
 
