@@ -547,7 +547,7 @@ function App() {
     return createInitialGameState(initialSeed);
   });
   const [actionHistory, setActionHistory] = useState<TurnActions[]>(() => urlMatch?.actions || []);
-  const [pendingActions, setPendingActions] = useState<PendingActions>({});
+  const [pendingActions, setPendingActions] = useState<PendingActions>(() => urlMatch?.pendingActions || {});
   const [activePlayer, setActivePlayer] = useState<'player1' | 'player2'>(() => {
     // In async mode, activePlayer should match who needs to act
     if (urlMatch) {
@@ -746,6 +746,31 @@ function App() {
       return;
     }
 
+    // Async mode: Store action and check if both ready
+    if (asyncMode) {
+      const newPending = { ...pendingActions, [activePlayer]: action };
+      setPendingActions(newPending);
+      
+      // If both actions are now ready, resolve the turn
+      if (newPending.player1 && newPending.player2) {
+        const turnActions: TurnActions = {
+          playerActions: [
+            { playerId: 'player1', action: newPending.player1 },
+            { playerId: 'player2', action: newPending.player2 },
+          ],
+        };
+
+        const newState = resolveTurn(gameState, turnActions);
+        setGameState(newState);
+        setActionHistory([...actionHistory, turnActions]);
+        setPendingActions({});
+        setActivePlayer('player1'); // Reset to player1 for next turn
+      }
+      
+      return;
+    }
+
+    // Hotseat mode: collect both actions before resolving
     const newPending = { ...pendingActions };
     newPending[activePlayer] = action;
     setPendingActions(newPending);
@@ -933,6 +958,7 @@ function App() {
                   const match: EncodedMatch = {
                     seed: gameSeed,
                     actions: [],
+                    pendingActions: {},
                     currentPlayer: 'player2', // Next player to act
                     version: 1,
                   };
@@ -943,6 +969,7 @@ function App() {
                     const p1Match: EncodedMatch = {
                       seed: gameSeed,
                       actions: [],
+                      pendingActions: {},
                       currentPlayer: 'player1',
                       version: 1,
                     };
@@ -1172,12 +1199,13 @@ function App() {
                 const match: EncodedMatch = {
                   seed: gameSeed,
                   actions: actionHistory,
+                  pendingActions: pendingActions, // Include pending actions
                   currentPlayer: nextPlayer,
                   version: 1,
                 };
                 const url = createShareableURL(match);
                 navigator.clipboard.writeText(url).then(() => {
-                  alert('Challenge link copied! Share it with your opponent.');
+                  alert(`Challenge link copied! Send it to ${nextPlayer === 'player1' ? 'Player 1' : 'Player 2'}.`);
                 }).catch(() => {
                   prompt('Copy this link:', url);
                 });
