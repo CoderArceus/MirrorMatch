@@ -13,6 +13,7 @@
 import { isActionLegal, resolveTurn } from '../../engine/src';
 import type { GameState, PlayerAction, TurnActions } from '../../engine/src';
 
+// Export AI difficulty type for use in UI
 export type AIDifficulty = 'easy' | 'normal' | 'hard';
 
 // ============================================================================
