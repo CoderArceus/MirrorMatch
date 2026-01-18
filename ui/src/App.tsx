@@ -3,7 +3,7 @@
  * Engine is treated as a BLACK BOX - no modifications
  */
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { 
   createInitialGameState, 
   isActionLegal,
@@ -23,13 +23,102 @@ type PendingActions = {
   player2?: PlayerAction;
 };
 
+type SessionStats = {
+  games: number;
+  p1Wins: number;
+  p2Wins: number;
+  draws: number;
+  totalTurns: number;
+};
+
+// ============================================================================
+// Telemetry: Local Storage Stats
+// ============================================================================
+
+const STATS_KEY = 'mirrormatch-session-stats';
+
+function loadStats(): SessionStats {
+  const stored = localStorage.getItem(STATS_KEY);
+  if (stored) {
+    try {
+      return JSON.parse(stored);
+    } catch {
+      // Invalid data, reset
+    }
+  }
+  return { games: 0, p1Wins: 0, p2Wins: 0, draws: 0, totalTurns: 0 };
+}
+
+function saveStats(stats: SessionStats): void {
+  localStorage.setItem(STATS_KEY, JSON.stringify(stats));
+}
+
+function recordGame(state: GameState): void {
+  const stats = loadStats();
+  stats.games += 1;
+  stats.totalTurns += state.turnNumber;
+
+  if (state.winner === 'player1') {
+    stats.p1Wins += 1;
+  } else if (state.winner === 'player2') {
+    stats.p2Wins += 1;
+  } else {
+    stats.draws += 1;
+  }
+
+  saveStats(stats);
+}
+
+function resetStats(): void {
+  localStorage.removeItem(STATS_KEY);
+}
+
+// ============================================================================
+// Game Over Explanation
+// ============================================================================
+
+function getEndReason(state: GameState): string {
+  // Check if all lanes are locked
+  const allLanesLocked = state.players.every(p => p.lanes.every(l => l.locked));
+  if (allLanesLocked) {
+    return 'All lanes are locked. No legal actions remain.';
+  }
+
+  // Check if deck and queue are exhausted
+  if (state.deck.length === 0 && state.queue.length === 0) {
+    return 'Deck and queue are exhausted. No cards remain.';
+  }
+
+  return 'Victory condition reached.';
+}
+
+function getWinnerExplanation(state: GameState): string {
+  if (!state.winner) {
+    return 'Both players achieved equal scores across all lanes.';
+  }
+
+  const winnerName = state.winner === 'player1' ? 'Player 1' : 'Player 2';
+  return `${winnerName} won 2 out of 3 lanes.`;
+}
+
 function App() {
   const [gameState, setGameState] = useState<GameState>(() => createInitialGameState(Date.now()));
   const [pendingActions, setPendingActions] = useState<PendingActions>({});
   const [activePlayer, setActivePlayer] = useState<'player1' | 'player2'>('player1');
+  const [stats, setStats] = useState<SessionStats>(loadStats);
+  const [gameRecorded, setGameRecorded] = useState(false);
 
   const player1 = gameState.players[0];
   const player2 = gameState.players[1];
+
+  // Record game stats when it ends (only once)
+  useEffect(() => {
+    if (gameState.gameOver && !gameRecorded) {
+      recordGame(gameState);
+      setStats(loadStats());
+      setGameRecorded(true);
+    }
+  }, [gameState.gameOver, gameRecorded]);
 
   // Check if an action is legal for the active player
   const checkLegal = (action: PlayerAction): boolean => {
@@ -75,6 +164,15 @@ function App() {
     setGameState(createInitialGameState(Date.now()));
     setPendingActions({});
     setActivePlayer('player1');
+    setGameRecorded(false);
+  };
+
+  // Reset stats
+  const handleResetStats = () => {
+    if (confirm('Reset all session stats? This cannot be undone.')) {
+      resetStats();
+      setStats(loadStats());
+    }
   };
 
   // Render a single lane
@@ -224,13 +322,74 @@ function App() {
           </div>
         )}
 
+        {/* Game Over Panel */}
         {gameState.gameOver && (
-          <div className="game-over-controls">
-            <button onClick={resetGame} className="reset-btn">
-              New Game
-            </button>
+          <div className="game-over-panel">
+            <div className="game-over-header">
+              <h2>🏁 Game Over</h2>
+              {gameState.winner ? (
+                <div className="winner-announcement">
+                  {gameState.winner === 'player1' ? 'Player 1' : 'Player 2'} Wins!
+                </div>
+              ) : (
+                <div className="draw-announcement">Draw</div>
+              )}
+            </div>
+
+            <div className="game-over-explanation">
+              <h3>Why did the game end?</h3>
+              <p className="end-reason">{getEndReason(gameState)}</p>
+              <p className="winner-reason">{getWinnerExplanation(gameState)}</p>
+              <p className="turn-count">Game lasted {gameState.turnNumber - 1} turns.</p>
+            </div>
+
+            <div className="game-over-actions">
+              <button onClick={resetGame} className="reset-btn">
+                Play Again
+              </button>
+            </div>
           </div>
         )}
+
+        {/* Session Stats Panel */}
+        <div className="stats-panel">
+          <h3>📊 Session Statistics</h3>
+          <div className="stats-grid">
+            <div className="stat-item">
+              <div className="stat-label">Games Played</div>
+              <div className="stat-value">{stats.games}</div>
+            </div>
+            <div className="stat-item">
+              <div className="stat-label">Player 1 Wins</div>
+              <div className="stat-value">{stats.p1Wins}</div>
+            </div>
+            <div className="stat-item">
+              <div className="stat-label">Player 2 Wins</div>
+              <div className="stat-value">{stats.p2Wins}</div>
+            </div>
+            <div className="stat-item">
+              <div className="stat-label">Draws</div>
+              <div className="stat-value">{stats.draws}</div>
+            </div>
+            <div className="stat-item">
+              <div className="stat-label">Avg Turns/Game</div>
+              <div className="stat-value">
+                {stats.games > 0 ? (stats.totalTurns / stats.games).toFixed(1) : '0.0'}
+              </div>
+            </div>
+            <div className="stat-item">
+              <div className="stat-label">Draw Rate</div>
+              <div className="stat-value">
+                {stats.games > 0 ? ((stats.draws / stats.games) * 100).toFixed(1) : '0.0'}%
+              </div>
+            </div>
+          </div>
+          {stats.games > 0 && (
+            <button onClick={handleResetStats} className="reset-stats-btn">
+              Reset Stats
+            </button>
+          )}
+        </div>
       </div>
     </div>
   );

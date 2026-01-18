@@ -306,10 +306,73 @@ body {
   background: #ee9900;
 }
 
-/* Game Over */
-.game-over-controls {
+/* Game Over Panel */
+.game-over-panel {
+  background: #333;
+  border-radius: 6px;
+  padding: 32px;
+  margin-bottom: 24px;
   text-align: center;
-  padding: 24px;
+  border: 3px solid #ffaa00;
+}
+
+.game-over-header h2 {
+  font-size: 32px;
+  margin-bottom: 16px;
+  color: #ffaa00;
+}
+
+.winner-announcement {
+  font-size: 28px;
+  font-weight: bold;
+  color: #76ff76;
+  margin-bottom: 24px;
+  animation: pulse 1s infinite;
+}
+
+.draw-announcement {
+  font-size: 28px;
+  font-weight: bold;
+  color: #ffaa00;
+  margin-bottom: 24px;
+}
+
+.game-over-explanation {
+  background: #2a2a2a;
+  border-radius: 4px;
+  padding: 20px;
+  margin: 20px 0;
+  text-align: left;
+}
+
+.game-over-explanation h3 {
+  font-size: 18px;
+  color: #4a9eff;
+  margin-bottom: 12px;
+}
+
+.end-reason {
+  font-size: 16px;
+  color: #e0e0e0;
+  margin-bottom: 8px;
+  line-height: 1.5;
+}
+
+.winner-reason {
+  font-size: 16px;
+  color: #aaa;
+  margin-bottom: 8px;
+  line-height: 1.5;
+}
+
+.turn-count {
+  font-size: 14px;
+  color: #888;
+  font-style: italic;
+}
+
+.game-over-actions {
+  margin-top: 24px;
 }
 
 .reset-btn {
@@ -326,6 +389,66 @@ body {
 
 .reset-btn:hover {
   background: #3a8eef;
+}
+
+/* Session Stats Panel */
+.stats-panel {
+  background: #333;
+  border-radius: 6px;
+  padding: 20px;
+  margin-top: 24px;
+}
+
+.stats-panel h3 {
+  font-size: 20px;
+  color: #4a9eff;
+  margin-bottom: 16px;
+  text-align: center;
+}
+
+.stats-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 16px;
+  margin-bottom: 16px;
+}
+
+.stat-item {
+  background: #2a2a2a;
+  border-radius: 4px;
+  padding: 12px;
+  text-align: center;
+}
+
+.stat-label {
+  font-size: 12px;
+  color: #aaa;
+  margin-bottom: 8px;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.stat-value {
+  font-size: 24px;
+  font-weight: bold;
+  color: #4a9eff;
+}
+
+.reset-stats-btn {
+  width: 100%;
+  padding: 10px;
+  background: #555;
+  border: none;
+  border-radius: 4px;
+  color: #aaa;
+  font-size: 12px;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.reset-stats-btn:hover {
+  background: #666;
+  color: #fff;
 }
 
 /* Responsive */
