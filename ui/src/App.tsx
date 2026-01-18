@@ -6,11 +6,14 @@
 import { useState } from 'react';
 import { 
   createInitialGameState, 
-  GameState, 
-  PlayerAction, 
-  TurnActions,
   isActionLegal,
   resolveTurn 
+} from '../../engine/src';
+
+import type { 
+  GameState, 
+  PlayerAction, 
+  TurnActions 
 } from '../../engine/src';
 
 import './App.css';
