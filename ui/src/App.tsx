@@ -427,13 +427,12 @@ function App() {
     return false;
   };
 
-  // Auto-pass if active player has no legal actions
+  // Auto-pass if active player has no legal actions and resolve turn when both actions ready
   useEffect(() => {
     if (gameState.gameOver) return;
 
     const activeHasActions = hasLegalActions(activePlayer);
     const otherPlayer = activePlayer === 'player1' ? 'player2' : 'player1';
-    const otherHasActions = hasLegalActions(otherPlayer);
 
     // If active player has no actions but hasn't submitted yet
     if (!activeHasActions && !pendingActions[activePlayer]) {
@@ -444,22 +443,36 @@ function App() {
         if (firstUnlockedLane >= 0) {
           // Try to stand on first unlocked lane
           const standAction: PlayerAction = { type: 'stand', targetLane: firstUnlockedLane };
-          setPendingActions({ ...pendingActions, [activePlayer]: standAction });
+          const newPending = { ...pendingActions, [activePlayer]: standAction };
+          setPendingActions(newPending);
           
-          // Switch to other player
-          if (!pendingActions[otherPlayer]) {
-            setActivePlayer(otherPlayer);
+          // If both actions are now ready, resolve the turn
+          if (newPending.player1 && newPending.player2) {
+            // Delay slightly to allow state to update
+            setTimeout(() => {
+              const turnActions: TurnActions = {
+                playerActions: [
+                  { playerId: 'player1', action: newPending.player1! },
+                  { playerId: 'player2', action: newPending.player2! },
+                ],
+              };
+
+              const newState = resolveTurn(gameState, turnActions);
+              setGameState(newState);
+              setActionHistory([...actionHistory, turnActions]);
+              setPendingActions({});
+              setActivePlayer('player1');
+            }, 0);
+          } else {
+            // Switch to other player if they haven't submitted yet
+            if (!newPending[otherPlayer]) {
+              setActivePlayer(otherPlayer);
+            }
           }
         }
       }
     }
-
-    // If both players have no actions and the game isn't over, force resolution
-    if (!activeHasActions && !otherHasActions && (!pendingActions.player1 || !pendingActions.player2)) {
-      // Both players stuck - this shouldn't happen with proper validators, but handle it
-      console.warn('Both players have no legal actions - game should have ended');
-    }
-  }, [gameState, activePlayer, pendingActions]);
+  }, [gameState, activePlayer, pendingActions, actionHistory]);
 
   // Check if an action is legal for the active player
   const checkLegal = (action: PlayerAction): boolean => {
