@@ -10,9 +10,8 @@
  * AI looks 1 turn ahead and evaluates outcomes via heuristic
  */
 
-import { GameState, PlayerAction } from '../../engine/src/types';
 import { isActionLegal, resolveTurn } from '../../engine/src';
-import type { TurnActions } from '../../engine/src/actions';
+import type { GameState, PlayerAction, TurnActions } from '../../engine/src';
 
 export type AIDifficulty = 'easy' | 'normal' | 'hard';
 
