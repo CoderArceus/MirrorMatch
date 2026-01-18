@@ -117,6 +117,36 @@ function App() {
       recordGame(gameState);
       setStats(loadStats());
       setGameRecorded(true);
+
+      // DEBUG: Log winner determination details
+      console.group('🏁 Game Over - Winner Determination Debug');
+      console.log('Winner:', gameState.winner);
+      console.log('\nPlayer 1 Lanes:');
+      gameState.players[0].lanes.forEach((lane, i) => {
+        console.log(`  Lane ${String.fromCharCode(65 + i)}: total=${lane.total}, busted=${lane.busted}, locked=${lane.locked}`);
+      });
+      console.log('\nPlayer 2 Lanes:');
+      gameState.players[1].lanes.forEach((lane, i) => {
+        console.log(`  Lane ${String.fromCharCode(65 + i)}: total=${lane.total}, busted=${lane.busted}, locked=${lane.locked}`);
+      });
+      
+      // Manual lane comparison
+      console.log('\nLane-by-Lane Results:');
+      for (let i = 0; i < 3; i++) {
+        const p1 = gameState.players[0].lanes[i];
+        const p2 = gameState.players[1].lanes[i];
+        let result = '';
+        
+        if (p1.busted && p2.busted) result = 'TIE (both bust)';
+        else if (p1.busted) result = 'P2 WINS (P1 bust)';
+        else if (p2.busted) result = 'P1 WINS (P2 bust)';
+        else if (p1.total > p2.total) result = `P1 WINS (${p1.total} > ${p2.total})`;
+        else if (p2.total > p1.total) result = `P2 WINS (${p2.total} > ${p1.total})`;
+        else result = `TIE (${p1.total} = ${p2.total})`;
+        
+        console.log(`  Lane ${String.fromCharCode(65 + i)}: ${result}`);
+      }
+      console.groupEnd();
     }
   }, [gameState.gameOver, gameRecorded]);
 
