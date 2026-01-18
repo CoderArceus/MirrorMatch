@@ -41,6 +41,14 @@ type Replay = {
   timestamp: number;
 };
 
+type FeedbackType = 'fun' | 'confusing' | 'frustrating' | 'thinking';
+
+type Feedback = {
+  type: FeedbackType;
+  gameId: string;
+  timestamp: number;
+};
+
 // ============================================================================
 // Telemetry: Local Storage Stats
 // ============================================================================
@@ -116,6 +124,28 @@ function saveReplay(replay: Replay): void {
 
 function clearReplays(): void {
   localStorage.removeItem(REPLAYS_KEY);
+}
+
+// ============================================================================
+// Feedback System: Quick 1-Click Capture
+// ============================================================================
+
+const FEEDBACK_KEY = 'mirrormatch-feedback';
+
+function saveFeedback(feedback: Feedback): void {
+  const stored = localStorage.getItem(FEEDBACK_KEY);
+  const feedbacks: Feedback[] = stored ? JSON.parse(stored) : [];
+  feedbacks.push(feedback);
+  localStorage.setItem(FEEDBACK_KEY, JSON.stringify(feedbacks));
+}
+
+function loadFeedback(): Feedback[] {
+  const stored = localStorage.getItem(FEEDBACK_KEY);
+  return stored ? JSON.parse(stored) : [];
+}
+
+function clearFeedback(): void {
+  localStorage.removeItem(FEEDBACK_KEY);
 }
 
 // ============================================================================
@@ -350,9 +380,23 @@ function App() {
   const [vsAI, setVsAI] = useState<boolean>(false);
   const [aiDifficulty, setAIDifficulty] = useState<AIDifficulty>('normal');
   const [aiThinking, setAIThinking] = useState<boolean>(false);
+  
+  // Feedback
+  const [feedbackGiven, setFeedbackGiven] = useState<boolean>(false);
 
   const player1 = gameState.players[0];
   const player2 = gameState.players[1];
+  
+  // Handle feedback submission
+  const submitFeedback = (type: FeedbackType) => {
+    const feedback: Feedback = {
+      type,
+      gameId: `${gameSeed}`,
+      timestamp: Date.now(),
+    };
+    saveFeedback(feedback);
+    setFeedbackGiven(true);
+  };
 
   // Record game stats and replay when it ends (only once)
   useEffect(() => {
@@ -567,6 +611,7 @@ function App() {
     setActivePlayer('player1');
     setGameRecorded(false);
     setAIThinking(false);
+    setFeedbackGiven(false);
   };
 
   // Reset stats
@@ -811,6 +856,34 @@ function App() {
               <p className="end-reason">{getEndReason(gameState)}</p>
               <p className="turn-count">Game lasted {gameState.turnNumber - 1} turns.</p>
             </div>
+
+            {/* Quick Feedback */}
+            {!feedbackGiven && (
+              <div className="feedback-section">
+                <h3>Quick Feedback (Optional)</h3>
+                <p className="feedback-prompt">How did this game feel?</p>
+                <div className="feedback-buttons">
+                  <button onClick={() => submitFeedback('fun')} className="feedback-btn fun">
+                    😄 Fun
+                  </button>
+                  <button onClick={() => submitFeedback('confusing')} className="feedback-btn confusing">
+                    🤔 Confusing
+                  </button>
+                  <button onClick={() => submitFeedback('frustrating')} className="feedback-btn frustrating">
+                    😡 Frustrating
+                  </button>
+                  <button onClick={() => submitFeedback('thinking')} className="feedback-btn thinking">
+                    🧠 Made me think
+                  </button>
+                </div>
+              </div>
+            )}
+            
+            {feedbackGiven && (
+              <div className="feedback-thanks">
+                ✓ Thanks for your feedback!
+              </div>
+            )}
 
             <div className="game-over-actions">
               <button onClick={resetGame} className="reset-btn">

@@ -548,6 +548,84 @@ body {
   font-style: italic;
 }
 
+/* Feedback Section */
+.feedback-section {
+  background: #2a2a2a;
+  border-radius: 4px;
+  padding: 20px;
+  margin: 20px 0;
+  text-align: center;
+}
+
+.feedback-section h3 {
+  font-size: 18px;
+  color: #4a9eff;
+  margin-bottom: 8px;
+}
+
+.feedback-prompt {
+  font-size: 14px;
+  color: #aaa;
+  margin-bottom: 16px;
+}
+
+.feedback-buttons {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 12px;
+}
+
+.feedback-btn {
+  padding: 12px 8px;
+  background: #444;
+  border: 2px solid #666;
+  border-radius: 4px;
+  color: white;
+  font-size: 14px;
+  font-weight: bold;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.feedback-btn:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.3);
+}
+
+.feedback-btn.fun:hover {
+  background: #76ff76;
+  border-color: #76ff76;
+  color: #1a1a1a;
+}
+
+.feedback-btn.confusing:hover {
+  background: #ffaa00;
+  border-color: #ffaa00;
+  color: #1a1a1a;
+}
+
+.feedback-btn.frustrating:hover {
+  background: #ff5252;
+  border-color: #ff5252;
+  color: #1a1a1a;
+}
+
+.feedback-btn.thinking:hover {
+  background: #4a9eff;
+  border-color: #4a9eff;
+  color: #1a1a1a;
+}
+
+.feedback-thanks {
+  background: #2e5c2e;
+  padding: 16px;
+  border-radius: 4px;
+  margin: 20px 0;
+  color: #76ff76;
+  font-weight: bold;
+  text-align: center;
+}
+
 .game-over-actions {
   margin-top: 24px;
 }
