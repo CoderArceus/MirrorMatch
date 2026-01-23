@@ -46,6 +46,43 @@ export type LaneOutcome = {
     p2Total: number;
 };
 
+/**
+ * DAY 18 TASK 2: Decisiveness metrics for balance tuning
+ * 
+ * Quantifies game pressure and decisiveness at game end.
+ * All metrics are deterministic and derived from engine state.
+ */
+export interface DecisivenessMetrics {
+    /**
+     * Number of lanes that are still contestable (not locked by both players)
+     * Range: 0-3
+     * Lower = more decisive
+     */
+    contestableLanes: number;
+    
+    /**
+     * Player's remaining energy at game end
+     * Range: 0-3
+     * Lower = more decisive (forced commitment)
+     */
+    energyRemaining: number;
+    
+    /**
+     * Number of PassActions taken by this player
+     * Counted from action history (not inferred)
+     * Higher = less pressure/fewer options
+     */
+    forcedPasses: number;
+    
+    /**
+     * Number of lanes where player was within ≤3 points of 21
+     * without being busted, before game end
+     * Range: 0-3
+     * Higher = more pressure/closer to winning
+     */
+    winThreats: number;
+}
+
 // ============================================================================
 // Lane Analysis
 // ============================================================================
@@ -577,4 +614,87 @@ export function wasForcedDraw(state: GameState, playerId: string): boolean {
     }
 
     return false;
+}
+
+// ============================================================================
+// DAY 18 TASK 2: Decisiveness Metrics
+// ============================================================================
+
+/**
+ * Get decisiveness metrics for a player at game end
+ * 
+ * DAY 18: Quantifies game pressure and decisiveness for balance tuning.
+ * All metrics are deterministic and objective.
+ * 
+ * NOTE: forcedPasses requires actionLog which is not part of GameState.
+ * For full metrics with pass counting, use async match or replay system.
+ * This function provides state-based metrics only.
+ * 
+ * @param state - Terminal game state
+ * @param playerId - Player to analyze
+ * @param actionLog - Optional action log for counting passes (from AsyncMatch or Replay)
+ * @returns Decisiveness metrics
+ */
+export function getDecisivenessMetrics(
+    state: GameState,
+    playerId: string,
+    actionLog?: ReadonlyArray<{ playerId: string; action: { type: string } }>
+): DecisivenessMetrics {
+    const playerIndex = state.players.findIndex(p => p.id === playerId);
+    
+    if (playerIndex === -1) {
+        return {
+            contestableLanes: 0,
+            energyRemaining: 0,
+            forcedPasses: 0,
+            winThreats: 0
+        };
+    }
+
+    const player = state.players[playerIndex];
+    const opponent = state.players[playerIndex === 0 ? 1 : 0];
+
+    // ========================================================================
+    // Metric 1: Contestable Lanes
+    // ========================================================================
+    // Count lanes where at least one player hasn't locked
+    const contestableLanes = player.lanes.filter((lane, i) => {
+        const oppLane = opponent.lanes[i];
+        return !lane.locked || !oppLane.locked;
+    }).length;
+
+    // ========================================================================
+    // Metric 2: Energy Remaining
+    // ========================================================================
+    const energyRemaining = player.energy;
+
+    // ========================================================================
+    // Metric 3: Forced Passes
+    // ========================================================================
+    // Count pass actions from action log if provided
+    let forcedPasses = 0;
+    if (actionLog) {
+        forcedPasses = actionLog.filter(
+            entry => entry.playerId === playerId && entry.action.type === 'pass'
+        ).length;
+    }
+    // If no action log provided, we cannot count passes (set to 0)
+    // Caller should provide actionLog for accurate counting
+
+    // ========================================================================
+    // Metric 4: Win Threats
+    // ========================================================================
+    // Count lanes within ≤3 points of 21, not busted
+    const winThreats = player.lanes.filter(lane => {
+        if (lane.busted) return false;
+        const distance = 21 - lane.total;
+        return distance >= 0 && distance <= 3;
+    }).length;
+
+    return {
+        contestableLanes,
+        energyRemaining,
+        forcedPasses,
+        winThreats
+    };
 }

@@ -15,7 +15,9 @@ import {
   getDecisivenessScore,
   getMissedWinOpportunities,
   wasForcedDraw,
-  type DrawReason
+  getDecisivenessMetrics,
+  type DrawReason,
+  type DecisivenessMetrics
 } from '../src/index';
 
 describe('Draw Analysis (Day 18)', () => {
@@ -493,6 +495,452 @@ describe('Draw Analysis (Day 18)', () => {
 
       const forced = wasForcedDraw(drawState, 'player1');
       expect(forced).toBe(true);
+    });
+  });
+
+  // ==========================================================================
+  // DAY 18 TASK 2: Decisiveness Metrics
+  // ==========================================================================
+
+  describe('getDecisivenessMetrics (Day 18 Task 2)', () => {
+    it('should export getDecisivenessMetrics function', () => {
+      expect(typeof getDecisivenessMetrics).toBe('function');
+    });
+
+    it('should return DecisivenessMetrics interface with all required fields', () => {
+      const state = createInitialGameState(42);
+      const metrics = getDecisivenessMetrics(state, 'player1');
+
+      expect(metrics).toHaveProperty('contestableLanes');
+      expect(metrics).toHaveProperty('energyRemaining');
+      expect(metrics).toHaveProperty('forcedPasses');
+      expect(metrics).toHaveProperty('winThreats');
+    });
+
+    // ========================================================================
+    // Metric 1: Contestable Lanes
+    // ========================================================================
+
+    describe('contestableLanes metric', () => {
+      it('should count 3 contestable lanes at game start', () => {
+        const state = createInitialGameState(42);
+        const metrics = getDecisivenessMetrics(state, 'player1');
+
+        expect(metrics.contestableLanes).toBe(3);
+      });
+
+      it('should count 0 contestable lanes when all locked', () => {
+        const state = createInitialGameState(42);
+        const lockedState = {
+          ...state,
+          players: [
+            {
+              ...state.players[0],
+              lanes: [
+                { cards: [], total: 15, locked: true, busted: false },
+                { cards: [], total: 18, locked: true, busted: false },
+                { cards: [], total: 20, locked: true, busted: false }
+              ]
+            },
+            {
+              ...state.players[1],
+              lanes: [
+                { cards: [], total: 16, locked: true, busted: false },
+                { cards: [], total: 17, locked: true, busted: false },
+                { cards: [], total: 19, locked: true, busted: false }
+              ]
+            }
+          ]
+        };
+
+        const metrics = getDecisivenessMetrics(lockedState, 'player1');
+        expect(metrics.contestableLanes).toBe(0);
+      });
+
+      it('should count 2 contestable lanes when one lane locked by both', () => {
+        const state = createInitialGameState(42);
+        const partialState = {
+          ...state,
+          players: [
+            {
+              ...state.players[0],
+              lanes: [
+                { cards: [], total: 15, locked: true, busted: false }, // Both locked
+                { cards: [], total: 10, locked: false, busted: false },
+                { cards: [], total: 12, locked: false, busted: false }
+              ]
+            },
+            {
+              ...state.players[1],
+              lanes: [
+                { cards: [], total: 16, locked: true, busted: false }, // Both locked
+                { cards: [], total: 11, locked: false, busted: false },
+                { cards: [], total: 13, locked: false, busted: false }
+              ]
+            }
+          ]
+        };
+
+        const metrics = getDecisivenessMetrics(partialState, 'player1');
+        expect(metrics.contestableLanes).toBe(2);
+      });
+
+      it('should count lane as contestable if only one player locked it', () => {
+        const state = createInitialGameState(42);
+        const mixedState = {
+          ...state,
+          players: [
+            {
+              ...state.players[0],
+              lanes: [
+                { cards: [], total: 15, locked: true, busted: false }, // P1 locked
+                { cards: [], total: 10, locked: false, busted: false },
+                { cards: [], total: 12, locked: false, busted: false }
+              ]
+            },
+            {
+              ...state.players[1],
+              lanes: [
+                { cards: [], total: 16, locked: false, busted: false }, // P2 not locked
+                { cards: [], total: 11, locked: false, busted: false },
+                { cards: [], total: 13, locked: false, busted: false }
+              ]
+            }
+          ]
+        };
+
+        const metrics = getDecisivenessMetrics(mixedState, 'player1');
+        expect(metrics.contestableLanes).toBe(3); // All still contestable
+      });
+    });
+
+    // ========================================================================
+    // Metric 2: Energy Remaining
+    // ========================================================================
+
+    describe('energyRemaining metric', () => {
+      it('should return 3 energy at game start', () => {
+        const state = createInitialGameState(42);
+        const metrics = getDecisivenessMetrics(state, 'player1');
+
+        expect(metrics.energyRemaining).toBe(3);
+      });
+
+      it('should return 0 energy when depleted', () => {
+        const state = createInitialGameState(42);
+        const depletedState = {
+          ...state,
+          players: [
+            { ...state.players[0], energy: 0 },
+            state.players[1]
+          ]
+        };
+
+        const metrics = getDecisivenessMetrics(depletedState, 'player1');
+        expect(metrics.energyRemaining).toBe(0);
+      });
+
+      it('should return 1 energy after two burns', () => {
+        const state = createInitialGameState(42);
+        const partialState = {
+          ...state,
+          players: [
+            { ...state.players[0], energy: 1 },
+            state.players[1]
+          ]
+        };
+
+        const metrics = getDecisivenessMetrics(partialState, 'player1');
+        expect(metrics.energyRemaining).toBe(1);
+      });
+    });
+
+    // ========================================================================
+    // Metric 3: Forced Passes
+    // ========================================================================
+
+    describe('forcedPasses metric', () => {
+      it('should return 0 when no action log provided', () => {
+        const state = createInitialGameState(42);
+        const metrics = getDecisivenessMetrics(state, 'player1');
+
+        expect(metrics.forcedPasses).toBe(0);
+      });
+
+      it('should count pass actions from action log', () => {
+        const state = createInitialGameState(42);
+        const actionLog = [
+          { playerId: 'player1', action: { type: 'take', targetLane: 0 } },
+          { playerId: 'player2', action: { type: 'take', targetLane: 0 } },
+          { playerId: 'player1', action: { type: 'pass' } },
+          { playerId: 'player2', action: { type: 'burn' } },
+          { playerId: 'player1', action: { type: 'pass' } },
+          { playerId: 'player2', action: { type: 'pass' } }
+        ];
+
+        const metrics = getDecisivenessMetrics(state, 'player1', actionLog);
+        expect(metrics.forcedPasses).toBe(2);
+      });
+
+      it('should count only passes for specified player', () => {
+        const state = createInitialGameState(42);
+        const actionLog = [
+          { playerId: 'player1', action: { type: 'pass' } },
+          { playerId: 'player2', action: { type: 'pass' } },
+          { playerId: 'player1', action: { type: 'take', targetLane: 0 } },
+          { playerId: 'player2', action: { type: 'pass' } }
+        ];
+
+        const p1Metrics = getDecisivenessMetrics(state, 'player1', actionLog);
+        const p2Metrics = getDecisivenessMetrics(state, 'player2', actionLog);
+
+        expect(p1Metrics.forcedPasses).toBe(1);
+        expect(p2Metrics.forcedPasses).toBe(2);
+      });
+
+      it('should return 0 for empty action log', () => {
+        const state = createInitialGameState(42);
+        const metrics = getDecisivenessMetrics(state, 'player1', []);
+
+        expect(metrics.forcedPasses).toBe(0);
+      });
+    });
+
+    // ========================================================================
+    // Metric 4: Win Threats
+    // ========================================================================
+
+    describe('winThreats metric', () => {
+      it('should return 0 win threats at game start', () => {
+        const state = createInitialGameState(42);
+        const metrics = getDecisivenessMetrics(state, 'player1');
+
+        expect(metrics.winThreats).toBe(0);
+      });
+
+      it('should count lane at exactly 21 as win threat', () => {
+        const state = createInitialGameState(42);
+        const threatState = {
+          ...state,
+          players: [
+            {
+              ...state.players[0],
+              lanes: [
+                { cards: [], total: 21, locked: false, busted: false },
+                { cards: [], total: 10, locked: false, busted: false },
+                { cards: [], total: 12, locked: false, busted: false }
+              ]
+            },
+            state.players[1]
+          ]
+        };
+
+        const metrics = getDecisivenessMetrics(threatState, 'player1');
+        expect(metrics.winThreats).toBe(1);
+      });
+
+      it('should count lanes at 18-21 as win threats', () => {
+        const state = createInitialGameState(42);
+        const threatState = {
+          ...state,
+          players: [
+            {
+              ...state.players[0],
+              lanes: [
+                { cards: [], total: 21, locked: false, busted: false }, // Distance 0
+                { cards: [], total: 20, locked: false, busted: false }, // Distance 1
+                { cards: [], total: 19, locked: false, busted: false }  // Distance 2
+              ]
+            },
+            state.players[1]
+          ]
+        };
+
+        const metrics = getDecisivenessMetrics(threatState, 'player1');
+        expect(metrics.winThreats).toBe(3);
+      });
+
+      it('should count lane at 18 (distance 3) as win threat', () => {
+        const state = createInitialGameState(42);
+        const threatState = {
+          ...state,
+          players: [
+            {
+              ...state.players[0],
+              lanes: [
+                { cards: [], total: 18, locked: false, busted: false }, // Distance 3 (boundary)
+                { cards: [], total: 10, locked: false, busted: false },
+                { cards: [], total: 12, locked: false, busted: false }
+              ]
+            },
+            state.players[1]
+          ]
+        };
+
+        const metrics = getDecisivenessMetrics(threatState, 'player1');
+        expect(metrics.winThreats).toBe(1);
+      });
+
+      it('should not count lane at 17 (distance 4) as win threat', () => {
+        const state = createInitialGameState(42);
+        const noThreatState = {
+          ...state,
+          players: [
+            {
+              ...state.players[0],
+              lanes: [
+                { cards: [], total: 17, locked: false, busted: false }, // Distance 4 (too far)
+                { cards: [], total: 10, locked: false, busted: false },
+                { cards: [], total: 12, locked: false, busted: false }
+              ]
+            },
+            state.players[1]
+          ]
+        };
+
+        const metrics = getDecisivenessMetrics(noThreatState, 'player1');
+        expect(metrics.winThreats).toBe(0);
+      });
+
+      it('should not count busted lanes as win threats', () => {
+        const state = createInitialGameState(42);
+        const bustedState = {
+          ...state,
+          players: [
+            {
+              ...state.players[0],
+              lanes: [
+                { cards: [], total: 25, locked: false, busted: true }, // Busted
+                { cards: [], total: 20, locked: false, busted: false }, // Good
+                { cards: [], total: 22, locked: false, busted: true }  // Busted
+              ]
+            },
+            state.players[1]
+          ]
+        };
+
+        const metrics = getDecisivenessMetrics(bustedState, 'player1');
+        expect(metrics.winThreats).toBe(1); // Only lane at 20
+      });
+    });
+
+    // ========================================================================
+    // Integration: All Metrics Together
+    // ========================================================================
+
+    describe('combined metrics scenarios', () => {
+      it('should handle high-pressure endgame correctly', () => {
+        const state = createInitialGameState(42);
+        const endgameState = {
+          ...state,
+          gameOver: true,
+          winner: null,
+          players: [
+            {
+              ...state.players[0],
+              energy: 0,
+              lanes: [
+                { cards: [], total: 21, locked: true, busted: false },
+                { cards: [], total: 20, locked: true, busted: false },
+                { cards: [], total: 19, locked: true, busted: false }
+              ]
+            },
+            {
+              ...state.players[1],
+              lanes: [
+                { cards: [], total: 21, locked: true, busted: false },
+                { cards: [], total: 20, locked: true, busted: false },
+                { cards: [], total: 19, locked: true, busted: false }
+              ]
+            }
+          ]
+        };
+
+        const actionLog = [
+          { playerId: 'player1', action: { type: 'take', targetLane: 0 } },
+          { playerId: 'player2', action: { type: 'take', targetLane: 0 } },
+          { playerId: 'player1', action: { type: 'burn' } },
+          { playerId: 'player2', action: { type: 'burn' } }
+        ];
+
+        const metrics = getDecisivenessMetrics(endgameState, 'player1', actionLog);
+
+        expect(metrics.contestableLanes).toBe(0); // All locked
+        expect(metrics.energyRemaining).toBe(0); // Depleted
+        expect(metrics.forcedPasses).toBe(0); // No passes
+        expect(metrics.winThreats).toBe(3); // All lanes 18-21
+      });
+
+      it('should handle low-pressure early game correctly', () => {
+        const state = createInitialGameState(42);
+        const earlyGameState = {
+          ...state,
+          players: [
+            {
+              ...state.players[0],
+              energy: 3,
+              lanes: [
+                { cards: [], total: 5, locked: false, busted: false },
+                { cards: [], total: 8, locked: false, busted: false },
+                { cards: [], total: 0, locked: false, busted: false }
+              ]
+            },
+            state.players[1]
+          ]
+        };
+
+        const metrics = getDecisivenessMetrics(earlyGameState, 'player1');
+
+        expect(metrics.contestableLanes).toBe(3); // All open
+        expect(metrics.energyRemaining).toBe(3); // Full
+        expect(metrics.forcedPasses).toBe(0); // No log
+        expect(metrics.winThreats).toBe(0); // Too far from 21
+      });
+    });
+
+    // ========================================================================
+    // Edge Cases
+    // ========================================================================
+
+    describe('edge cases', () => {
+      it('should return zero metrics for invalid player', () => {
+        const state = createInitialGameState(42);
+        const metrics = getDecisivenessMetrics(state, 'nonexistent');
+
+        expect(metrics.contestableLanes).toBe(0);
+        expect(metrics.energyRemaining).toBe(0);
+        expect(metrics.forcedPasses).toBe(0);
+        expect(metrics.winThreats).toBe(0);
+      });
+
+      it('should handle mixed locked states correctly', () => {
+        const state = createInitialGameState(42);
+        const mixedState = {
+          ...state,
+          players: [
+            {
+              ...state.players[0],
+              lanes: [
+                { cards: [], total: 20, locked: true, busted: false },
+                { cards: [], total: 15, locked: false, busted: false },
+                { cards: [], total: 10, locked: false, busted: false }
+              ]
+            },
+            {
+              ...state.players[1],
+              lanes: [
+                { cards: [], total: 19, locked: false, busted: false },
+                { cards: [], total: 14, locked: true, busted: false },
+                { cards: [], total: 9, locked: false, busted: false }
+              ]
+            }
+          ]
+        };
+
+        const metrics = getDecisivenessMetrics(mixedState, 'player1');
+        expect(metrics.contestableLanes).toBe(3); // All contestable (none locked by both)
+        expect(metrics.winThreats).toBe(1); // Only lane at 20
+      });
     });
   });
 });

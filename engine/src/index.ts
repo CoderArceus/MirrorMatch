@@ -53,13 +53,16 @@ export {
   getMissedWinOpportunities,
   wasForcedDraw,
   // Day 18: Balance tuning
-  analyzeDrawReason
+  analyzeDrawReason,
+  getDecisivenessMetrics
 } from './analytics';
 
 export type {
   DrawReason,
   SkillBadge,
-  LaneOutcome
+  LaneOutcome,
+  // Day 18 Task 2: Decisiveness metrics
+  DecisivenessMetrics
 } from './analytics';
 
 // AI
