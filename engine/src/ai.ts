@@ -323,8 +323,32 @@ function chooseHardAction(
     throw new Error('Invalid game state: opponent not found');
   }
 
+  const playerIndex = state.players.findIndex(p => p.id === playerId);
+  const player = state.players[playerIndex];
+
+  // CRITICAL: Pre-filter out actions that would bust
+  // This prevents the AI from even considering suicidal moves
+  const safeActions = legalActions.filter(action => {
+    if (action.type === 'take') {
+      const targetLane = player.lanes[action.targetLane];
+      const frontCard = state.queue[0];
+      if (frontCard) {
+        const cardValue = getCardBaseValue(frontCard);
+        const newTotal = targetLane.total + cardValue;
+        // Filter out actions that would bust
+        if (newTotal > 21) {
+          return false; // This action would bust - don't even consider it
+        }
+      }
+    }
+    return true; // Keep this action
+  });
+
+  // If all actions would bust, fall back to legal actions (forced to pick least bad)
+  const actionsToEvaluate = safeActions.length > 0 ? safeActions : legalActions;
+
   // Score each action using minimax-lite
-  const scoredActions = legalActions.map(aiAction => {
+  const scoredActions = actionsToEvaluate.map(aiAction => {
     // Simulate all opponent responses to this AI action
     const opponentResponses = getLegalActions(state, opponentId);
 
@@ -498,8 +522,8 @@ function evaluateState(state: GameState, aiPlayerId: string): number {
         score -= 100 - aiLane.total; // Worse the lower the total
       }
     } else if (aiLane.busted) {
-      // Busted lane
-      score -= 200;
+      // Busted lane - MASSIVE penalty
+      score -= 500; // Busting is catastrophic - you lose that lane
     }
 
     // Opponent lane evaluation (inverted)
@@ -534,7 +558,8 @@ function evaluateState(state: GameState, aiPlayerId: string): number {
         score += 100 - oppLane.total;
       }
     } else if (oppLane.busted) {
-      score += 200;
+      // Opponent busted - HUGE bonus
+      score += 500; // Opponent busting is great - we win that lane
     }
 
     // Comparative advantage in this specific lane
