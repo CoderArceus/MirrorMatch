@@ -34,7 +34,7 @@ function createSeededRandom(seed: number): () => number {
 /**
  * Gets the base value of a card (without Ace optimization)
  */
-function getCardBaseValue(card: Card): number {
+export function getCardBaseValue(card: Card): number {
   if (card.rank === 'ASH') {
     return 1; // Ash cards are always worth 1
   }
@@ -93,15 +93,15 @@ function createStandardDeck(): Card[] {
 
   const deck: Card[] = [];
   let cardIndex = 0;
-  
+
   for (const suit of suits) {
     for (const rank of ranks) {
       // Create unique, stable ID: "spades-A-0", "hearts-10-13", etc.
       const id = `${suit.name}-${rank}-${cardIndex}`;
-      deck.push({ 
+      deck.push({
         id,
-        suit: suit.symbol, 
-        rank 
+        suit: suit.symbol,
+        rank
       });
       cardIndex++;
     }

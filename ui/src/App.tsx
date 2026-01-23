@@ -374,6 +374,9 @@ function App() {
     // If we've already submitted a pending action, don't auto-pass
     if (pendingActions[activePlayer]) return;
 
+    // AI Check: Don't auto-pass for AI (AI handles its own logic)
+    if (vsAI && activePlayer === 'player2') return;
+
     if (mustPass) {
       console.log(`Auto-pass: ${activePlayer} has no legal moves. Submitting PASS.`);
 
