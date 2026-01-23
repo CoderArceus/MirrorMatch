@@ -54,7 +54,8 @@ export {
   wasForcedDraw,
   // Day 18: Balance tuning
   analyzeDrawReason,
-  getDecisivenessMetrics
+  getDecisivenessMetrics,
+  analyzeDrawDiagnostics
 } from './analytics';
 
 export type {
@@ -62,7 +63,8 @@ export type {
   SkillBadge,
   LaneOutcome,
   // Day 18 Task 2: Decisiveness metrics
-  DecisivenessMetrics
+  DecisivenessMetrics,
+  DrawDiagnostics
 } from './analytics';
 
 // AI

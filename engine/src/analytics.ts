@@ -83,6 +83,30 @@ export interface DecisivenessMetrics {
     winThreats: number;
 }
 
+/**
+ * DAY 18 TASK 2.2: Complete draw diagnostics for balance tuning
+ * 
+ * Aggregates draw reason + decisiveness metrics for both players.
+ * Single object that fully explains why a draw occurred.
+ */
+export interface DrawDiagnostics {
+    /**
+     * Primary reason why the draw occurred
+     * From analyzeDrawReason()
+     */
+    reason: DrawReason;
+    
+    /**
+     * Player 1's decisiveness metrics at game end
+     */
+    p1: DecisivenessMetrics;
+    
+    /**
+     * Player 2's decisiveness metrics at game end
+     */
+    p2: DecisivenessMetrics;
+}
+
 // ============================================================================
 // Lane Analysis
 // ============================================================================
@@ -696,5 +720,46 @@ export function getDecisivenessMetrics(
         energyRemaining,
         forcedPasses,
         winThreats
+    };
+}
+
+// ============================================================================
+// DAY 18 TASK 2.2: Draw Diagnostics Aggregation
+// ============================================================================
+
+/**
+ * Analyze complete draw diagnostics for a game
+ * 
+ * DAY 18 TASK 2.2: Aggregates draw reason + decisiveness metrics for both players.
+ * Single diagnostic object that fully explains why a draw occurred.
+ * 
+ * INTEGRATION:
+ * - Uses analyzeDrawReason() for draw classification
+ * - Uses getDecisivenessMetrics() for both players
+ * - Passes actionLog through for forcedPasses counting
+ * 
+ * @param state - Terminal game state (must be a draw)
+ * @param player1Id - ID of player 1
+ * @param player2Id - ID of player 2
+ * @param actionLog - Optional action log for counting passes
+ * @returns Complete draw diagnostics
+ */
+export function analyzeDrawDiagnostics(
+    state: GameState,
+    player1Id: string,
+    player2Id: string,
+    actionLog?: ReadonlyArray<{ playerId: string; action: { type: string } }>
+): DrawDiagnostics {
+    // Get draw reason using existing function
+    const reason = analyzeDrawReason(state);
+    
+    // Get decisiveness metrics for both players
+    const p1 = getDecisivenessMetrics(state, player1Id, actionLog);
+    const p2 = getDecisivenessMetrics(state, player2Id, actionLog);
+    
+    return {
+        reason,
+        p1,
+        p2
     };
 }
