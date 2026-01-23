@@ -151,6 +151,8 @@ export function analyzeLane(p1Lane: LaneState, p2Lane: LaneState): LaneOutcome {
 /**
  * Primary function to determine why a draw occurred.
  * Covers both AI analytics needs and UI explanation needs.
+ * 
+ * DAY 18: Primary draw analysis function for balance tuning
  */
 export function analyzeDraw(state: GameState): DrawReason {
     if (!state.gameOver || state.winner !== null) {
@@ -229,6 +231,19 @@ export function analyzeDraw(state: GameState): DrawReason {
     }
 
     return 'equal_lanes';
+}
+
+/**
+ * DAY 18: Alias for analyzeDraw - preferred name for balance tuning context
+ * 
+ * Determines the primary reason why a game ended in a draw.
+ * Used for metrics tracking and balance analysis.
+ * 
+ * @param state - Terminal game state (must be a draw)
+ * @returns DrawReason categorizing why the draw occurred
+ */
+export function analyzeDrawReason(state: GameState): DrawReason {
+    return analyzeDraw(state);
 }
 
 /**

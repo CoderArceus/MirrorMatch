@@ -51,7 +51,9 @@ export {
   analyzeDraw,
   getDecisivenessScore,
   getMissedWinOpportunities,
-  wasForcedDraw
+  wasForcedDraw,
+  // Day 18: Balance tuning
+  analyzeDrawReason
 } from './analytics';
 
 export type {
