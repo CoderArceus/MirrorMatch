@@ -63,3 +63,18 @@ export type {
 // AI
 export { chooseAction } from './ai';
 export type { AIDifficulty } from './ai';
+
+// Async PvP
+export {
+  createAsyncMatch,
+  applyAsyncAction,
+  getAsyncMatchStatus,
+  verifyAsyncMatch
+} from './async';
+
+export type {
+  AsyncMatch,
+  ActionLogEntry,
+  ApplyAsyncActionResult,
+  AsyncMatchStatus
+} from './async';

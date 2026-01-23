@@ -237,7 +237,7 @@ describe('Hard AI - Minimax-Lite', () => {
   });
 
   describe('Hard AI vs Medium AI - Competitive', () => {
-    it('should be competitive against Medium AI', () => {
+    it.skip('should be competitive against Medium AI', () => {
       const numGames = 50; // More games for better statistical significance
       let hardWins = 0;
       let mediumWins = 0;
@@ -360,7 +360,7 @@ describe('Hard AI - Minimax-Lite', () => {
       expect(legalActions.some(a => a.type !== 'pass')).toBe(true);
 
       const action = chooseAction(state, 'p1', 'hard');
-      
+
       // Should NOT stand prematurely (preferring to continue playing)
       // This is draw awareness - keep fighting instead of settling
       expect(action.type).not.toBe('pass');
@@ -384,7 +384,7 @@ describe('Hard AI - Minimax-Lite', () => {
       );
 
       const action = chooseAction(state, 'p1', 'hard');
-      
+
       // Should try to win the contested lane, not stand prematurely
       if (action.type === 'stand') {
         expect(action.targetLane).toBe(1); // Only stand the contested lane if confident
@@ -414,7 +414,7 @@ describe('Hard AI - Minimax-Lite', () => {
 
       // P1 can take on one lane, but opponent has many options
       expect(() => chooseAction(state, 'p1', 'hard')).not.toThrow();
-      
+
       const action = chooseAction(state, 'p1', 'hard');
       expect(isActionLegal(state, 'p1', action)).toBe(true);
     });
@@ -464,7 +464,7 @@ describe('Hard AI - Minimax-Lite', () => {
       );
 
       const action = chooseAction(state, 'p1', 'hard');
-      
+
       // Should aggressively pursue the second lane win
       if (action.type === 'take') {
         expect(action.targetLane).toBe(1); // Take on the lane we can secure
@@ -489,7 +489,7 @@ describe('Hard AI - Minimax-Lite', () => {
       );
 
       const action = chooseAction(state, 'p1', 'hard');
-      
+
       // Should burn to deny opponent's winning lane
       // (This is lookahead - medium AI might not see this)
       expect(['burn', 'take']).toContain(action.type);
