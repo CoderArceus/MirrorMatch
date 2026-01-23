@@ -55,7 +55,8 @@ export {
   // Day 18: Balance tuning
   analyzeDrawReason,
   getDecisivenessMetrics,
-  analyzeDrawDiagnostics
+  analyzeDrawDiagnostics,
+  aggregateDrawStatistics
 } from './analytics';
 
 export type {
@@ -64,7 +65,8 @@ export type {
   LaneOutcome,
   // Day 18 Task 2: Decisiveness metrics
   DecisivenessMetrics,
-  DrawDiagnostics
+  DrawDiagnostics,
+  DrawStatistics
 } from './analytics';
 
 // AI

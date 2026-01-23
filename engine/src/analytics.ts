@@ -107,6 +107,51 @@ export interface DrawDiagnostics {
     p2: DecisivenessMetrics;
 }
 
+/**
+ * DAY 18 TASK 2.3: Draw statistics aggregation for balance analysis
+ * 
+ * Summarizes draw behavior across many completed games.
+ * Enables questions like:
+ * - Which draw reasons are most common?
+ * - Are draws high-pressure or low-pressure?
+ * - Do draws happen with energy remaining?
+ */
+export interface DrawStatistics {
+    /**
+     * Total number of draws analyzed
+     */
+    totalDraws: number;
+    
+    /**
+     * Count of draws by reason type
+     * All DrawReason enum values present (default 0)
+     */
+    byReason: Record<DrawReason, number>;
+    
+    /**
+     * Average contestable lanes across all draws (both players)
+     * Range: 0-3
+     */
+    avgContestableLanes: number;
+    
+    /**
+     * Average energy remaining across all draws (both players)
+     * Range: 0-3
+     */
+    avgEnergyRemaining: number;
+    
+    /**
+     * Average forced passes across all draws (both players)
+     */
+    avgForcedPasses: number;
+    
+    /**
+     * Average win threats across all draws (both players)
+     * Range: 0-3
+     */
+    avgWinThreats: number;
+}
+
 // ============================================================================
 // Lane Analysis
 // ============================================================================
@@ -761,5 +806,106 @@ export function analyzeDrawDiagnostics(
         reason,
         p1,
         p2
+    };
+}
+
+// ============================================================================
+// DAY 18 TASK 2.3: Draw Statistics Aggregation
+// ============================================================================
+
+/**
+ * Aggregate draw statistics across multiple games
+ * 
+ * DAY 18 TASK 2.3: Summarizes draw behavior for balance analysis.
+ * Answers questions like:
+ * - Which draw reasons are most common?
+ * - Are draws high-pressure or low-pressure?
+ * - Do draws happen with energy remaining?
+ * 
+ * DESIGN:
+ * - Pure function (no side effects)
+ * - Deterministic (same input → same output)
+ * - Order-independent (array order doesn't matter)
+ * - Simple arithmetic means for all averages
+ * - Averages combine both players per draw, then average globally
+ * 
+ * @param diagnostics - Array of draw diagnostics from completed games
+ * @returns Aggregated statistics
+ */
+export function aggregateDrawStatistics(
+    diagnostics: ReadonlyArray<DrawDiagnostics>
+): DrawStatistics {
+    // ========================================================================
+    // Handle empty input
+    // ========================================================================
+    if (diagnostics.length === 0) {
+        return {
+            totalDraws: 0,
+            byReason: {
+                mutual_pass: 0,
+                lane_split: 0,
+                deck_exhausted: 0,
+                stall_equilibrium: 0,
+                perfect_symmetry: 0,
+                energy_exhaustion: 0,
+                mutual_perfection: 0,
+                stall_lock: 0,
+                equal_lanes: 0,
+                tiebreaker_equal: 0
+            },
+            avgContestableLanes: 0,
+            avgEnergyRemaining: 0,
+            avgForcedPasses: 0,
+            avgWinThreats: 0
+        };
+    }
+
+    // ========================================================================
+    // Count draws by reason
+    // ========================================================================
+    const byReason: Record<DrawReason, number> = {
+        mutual_pass: 0,
+        lane_split: 0,
+        deck_exhausted: 0,
+        stall_equilibrium: 0,
+        perfect_symmetry: 0,
+        energy_exhaustion: 0,
+        mutual_perfection: 0,
+        stall_lock: 0,
+        equal_lanes: 0,
+        tiebreaker_equal: 0
+    };
+
+    for (const diag of diagnostics) {
+        byReason[diag.reason] = (byReason[diag.reason] || 0) + 1;
+    }
+
+    // ========================================================================
+    // Calculate averages
+    // ========================================================================
+    // For each draw: average p1 and p2, then average across all draws
+    
+    let totalContestableLanes = 0;
+    let totalEnergyRemaining = 0;
+    let totalForcedPasses = 0;
+    let totalWinThreats = 0;
+
+    for (const diag of diagnostics) {
+        // Average p1 and p2 for this draw
+        totalContestableLanes += (diag.p1.contestableLanes + diag.p2.contestableLanes) / 2;
+        totalEnergyRemaining += (diag.p1.energyRemaining + diag.p2.energyRemaining) / 2;
+        totalForcedPasses += (diag.p1.forcedPasses + diag.p2.forcedPasses) / 2;
+        totalWinThreats += (diag.p1.winThreats + diag.p2.winThreats) / 2;
+    }
+
+    const totalDraws = diagnostics.length;
+
+    return {
+        totalDraws,
+        byReason,
+        avgContestableLanes: totalContestableLanes / totalDraws,
+        avgEnergyRemaining: totalEnergyRemaining / totalDraws,
+        avgForcedPasses: totalForcedPasses / totalDraws,
+        avgWinThreats: totalWinThreats / totalDraws
     };
 }
