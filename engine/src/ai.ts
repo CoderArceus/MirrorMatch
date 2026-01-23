@@ -14,8 +14,8 @@
 import { getLegalActions } from './validators';
 import { resolveTurn } from './resolveTurn';
 import { getCardBaseValue } from './state';
-import type { GameState } from './types';
-import type { PlayerAction, TurnActions } from './actions';
+import { getDecisivenessScore } from './analytics';
+import type { GameState, PlayerAction, TurnActions } from './types';
 
 // ============================================================================
 // Heuristic Weights
@@ -351,7 +351,7 @@ function chooseHardAction(
       case 'take': {
         const targetLane = player.lanes[action.targetLane];
         const frontCard = state.queue[0];
-        
+
         if (!frontCard) {
           score = -1000;
           break;
@@ -390,17 +390,17 @@ function chooseHardAction(
             score += 200; // INCREASED: Leading unlocked lane
           }
         }
-        
+
         // BONUS: Taking on empty lane vs opponent's established lane
         if (targetLane.total === 0 && oppLane.total > 0 && !oppLane.locked) {
           score += 100; // Start building to compete
         }
 
         // SECOND LANE WIN — avoid draws (CRITICAL)
-        const myWonLanes = player.lanes.filter((l, i) => 
+        const myWonLanes = player.lanes.filter((l, i) =>
           !l.busted && l.locked && l.total > opponent.lanes[i].total && l.total <= 21
         ).length;
-        
+
         if (myWonLanes === 1 && newTotal >= 19) {
           score += 500; // MASSIVE: Close out the match!
         } else if (myWonLanes === 1 && newTotal >= 17) {
@@ -442,7 +442,7 @@ function chooseHardAction(
         // Burn if opponent has advantage
         const myUnlockedLanes = player.lanes.filter(l => !l.locked).length;
         const oppUnlockedLanes = opponent.lanes.filter(l => !l.locked).length;
-        
+
         if (oppUnlockedLanes > myUnlockedLanes) {
           score += 80;
         }
@@ -457,7 +457,7 @@ function chooseHardAction(
 
       case 'stand': {
         const targetLane = player.lanes[action.targetLane];
-        
+
         // Value based on total
         if (targetLane.total === 21) {
           score += 800; // INCREASED: Lock perfection
@@ -482,12 +482,12 @@ function chooseHardAction(
         }
 
         // SECOND LANE WIN (CRITICAL ANTI-DRAW)
-        const myWonLanes = player.lanes.filter((l, i) => 
+        const myWonLanes = player.lanes.filter((l, i) =>
           l.locked && !l.busted && l.total > opponent.lanes[i].total
         ).length;
-        
+
         const wouldWinThisLane = targetLane.total > oppLane.total && !oppLane.busted;
-        
+
         if (myWonLanes === 1 && wouldWinThisLane && targetLane.total >= 18) {
           score += 700; // MASSIVE: End the game NOW!
         } else if (myWonLanes === 1 && wouldWinThisLane && targetLane.total >= 16) {
@@ -498,8 +498,19 @@ function chooseHardAction(
       }
 
       case 'pass': {
+        // DAY 16: Penalize pass heavily (indicates indecision/stall)
         score -= 1000;
         break;
+      }
+    }
+
+    // DAY 16: Anti-draw incentive - penalize low decisiveness
+    // This creates pressure to commit rather than stall
+    const decisiveness = getDecisivenessScore(state, playerId);
+    if (decisiveness < 30) {
+      // State is indecisive - penalize passive actions
+      if (action.type === 'stand' && player.lanes[action.targetLane].total < 17) {
+        score -= 100; // Don't lock weak lanes when indecisive
       }
     }
 
@@ -510,251 +521,4 @@ function chooseHardAction(
   return scoredActions[0].action;
 }
 
-/**
- * Evaluate a game state from the AI's perspective
- * 
- * CRITICAL SCORING RULES:
- * - Match win (≥2 lanes) is best: +1000
- * - Match loss (opponent ≥2 lanes) is worst: -1000
- * - Draw terminal state is bad: -300 (worse than continuing)
- * - Leading 1 lane is good: +200
- * - Trailing 1 lane is bad: -200
- * - Lane proximity to 21 matters
- * - Busts are heavily penalized
- * - Pass is neutral (handled by engine contract)
- * 
- * DRAW AWARENESS:
- * Draws must score worse than "still fighting" to encourage aggression.
- * This prevents the AI from playing for draws when it could win.
- * 
- * @param state - Game state to evaluate
- * @param aiPlayerId - AI player's ID
- * @returns Numeric score (higher is better for AI)
- */
-function evaluateState(state: GameState, aiPlayerId: string): number {
-  const aiIndex = state.players.findIndex(p => p.id === aiPlayerId);
-  if (aiIndex === -1) return -Infinity;
 
-  const ai = state.players[aiIndex];
-  const opponent = state.players[aiIndex === 0 ? 1 : 0];
-
-  let score = 0;
-
-  // ============================================================================
-  // TERMINAL STATE EVALUATION
-  // ============================================================================
-
-  if (state.gameOver) {
-    if (state.winner === aiPlayerId) {
-      return 10000; // Guaranteed win
-    } else if (state.winner === null) {
-      return -300; // Draw is bad - we want to keep fighting
-    } else {
-      return -10000; // Loss
-    }
-  }
-
-  // ============================================================================
-  // LANE WINS EVALUATION (2-out-of-3 win condition)
-  // ============================================================================
-
-  let aiLaneWins = 0;
-  let oppLaneWins = 0;
-  let contested = 0;
-
-  for (let i = 0; i < 3; i++) {
-    const aiLane = ai.lanes[i];
-    const oppLane = opponent.lanes[i];
-
-    // Determine lane winner (only for locked lanes or busts)
-    if (aiLane.locked && oppLane.locked) {
-      if (aiLane.busted && oppLane.busted) {
-        // Both bust = draw lane
-        contested++;
-      } else if (aiLane.busted) {
-        oppLaneWins++;
-      } else if (oppLane.busted) {
-        aiLaneWins++;
-      } else if (aiLane.total > oppLane.total) {
-        aiLaneWins++;
-      } else if (oppLane.total > aiLane.total) {
-        oppLaneWins++;
-      } else {
-        contested++;
-      }
-    } else {
-      // Lane still in play
-      contested++;
-    }
-  }
-
-  // Match win/loss evaluation
-  if (aiLaneWins >= 2) {
-    score += 1000; // AI has match point
-  }
-  if (oppLaneWins >= 2) {
-    score -= 1000; // Opponent has match point
-  }
-
-  // Single lane lead
-  if (aiLaneWins === 1 && oppLaneWins === 0) {
-    score += 200; // AI up 1-0
-  } else if (oppLaneWins === 1 && aiLaneWins === 0) {
-    score -= 200; // AI down 0-1
-  }
-
-  // ============================================================================
-  // LANE QUALITY EVALUATION (for contested lanes)
-  // ============================================================================
-
-  for (let i = 0; i < 3; i++) {
-    const aiLane = ai.lanes[i];
-    const oppLane = opponent.lanes[i];
-
-    // Skip if lane is decided
-    if (aiLane.locked && oppLane.locked) continue;
-
-    // AI lane evaluation
-    if (!aiLane.busted && !aiLane.locked) {
-      // Building toward 21
-      if (aiLane.total === 21) {
-        score += 150;
-      } else if (aiLane.total >= 17 && aiLane.total <= 20) {
-        score += 80 + (21 - aiLane.total) * 5;
-      } else if (aiLane.total >= 12 && aiLane.total <= 16) {
-        score += 40 + aiLane.total * 2;
-      } else if (aiLane.total < 12) {
-        // Low totals have flexibility value
-        score += aiLane.total * 3;
-        // Bonus for having room to grow
-        score += (12 - aiLane.total) * 2;
-      }
-      
-      // CRITICAL: Penalize high single-card commitments
-      // Having one card at 10 or 11 is risky - limited flexibility
-      if (aiLane.cards.length === 1 && aiLane.total >= 10) {
-        score -= 35; // Strong commitment penalty for high opening
-      } else if (aiLane.cards.length === 1 && aiLane.total >= 8) {
-        score -= 20; // Moderate penalty for 8-9
-      }
-    } else if (aiLane.locked && !aiLane.busted) {
-      // Locked lanes - score based on total value
-      if (aiLane.total >= 17) {
-        score += 100 + aiLane.total; // Good lock
-      } else if (aiLane.total >= 12) {
-        score += aiLane.total; // Mediocre lock
-      } else {
-        // Terrible lock - locked at low value is a wasted lane
-        score -= 100 - aiLane.total; // Worse the lower the total
-      }
-    } else if (aiLane.busted) {
-      // Busted lane - MASSIVE penalty
-      score -= 500; // Busting is catastrophic - you lose that lane
-    }
-
-    // Opponent lane evaluation (inverted)
-    if (!oppLane.busted && !oppLane.locked) {
-      if (oppLane.total === 21) {
-        score -= 150;
-      } else if (oppLane.total >= 17 && oppLane.total <= 20) {
-        score -= 80 + (21 - oppLane.total) * 5;
-      } else if (oppLane.total >= 12 && oppLane.total <= 16) {
-        score -= 40 + oppLane.total * 2;
-      } else if (oppLane.total < 12) {
-        score -= oppLane.total * 3;
-        // Penalty: opponent has room to grow (bad for us)
-        score -= (12 - oppLane.total) * 2;
-      }
-      
-      // CRITICAL: Opponent having high single-card commitments is actually GOOD for us
-      // They're locked into risky positions
-      if (oppLane.cards.length === 1 && oppLane.total >= 10) {
-        score += 35; // Strong bonus: opponent committed to risky opening
-      } else if (oppLane.cards.length === 1 && oppLane.total >= 8) {
-        score += 20; // Moderate bonus for 8-9
-      }
-    } else if (oppLane.locked && !oppLane.busted) {
-      // Opponent locked lanes
-      if (oppLane.total >= 17) {
-        score -= 100 + oppLane.total; // Bad for us
-      } else if (oppLane.total >= 12) {
-        score -= oppLane.total; // Mediocre
-      } else {
-        // Opponent locked low - good for us!
-        score += 100 - oppLane.total;
-      }
-    } else if (oppLane.busted) {
-      // Opponent busted - HUGE bonus
-      score += 500; // Opponent busting is great - we win that lane
-    }
-
-    // Comparative advantage in this specific lane
-    if (!aiLane.busted && !oppLane.busted) {
-      if (aiLane.total > oppLane.total && aiLane.total <= 21) {
-        score += 30;
-      } else if (oppLane.total > aiLane.total && oppLane.total <= 21) {
-        score -= 30;
-      }
-      
-      // CRITICAL FIX: Value having lower totals (more room to grow)
-      // If both lanes are unlocked and low, whoever is LOWER has advantage
-      if (!aiLane.locked && !oppLane.locked) {
-        if (aiLane.total < 12 && oppLane.total < 12) {
-          // Lower total = more flexibility = better
-          const flexibilityAdvantage = oppLane.total - aiLane.total;
-          score += flexibilityAdvantage * 20; // MASSIVE bonus for keeping opponent low
-        }
-        
-        // SPECIAL: If AI has 0 and opponent has 1-3 (likely from ASH after burn)
-        // This is GOOD for AI - opponent's lane is gimped
-        if (aiLane.total === 0 && oppLane.total >= 1 && oppLane.total <= 3) {
-          score += 40; // Huge bonus for successful denial
-        }
-      }
-    }
-  }
-
-  // ============================================================================
-  // RESOURCE EVALUATION
-  // ============================================================================
-
-  // Energy advantage (more valuable early game)
-  const totalLanes = ai.lanes.length + opponent.lanes.length;
-  const lockedLanes = ai.lanes.filter(l => l.locked).length + 
-                      opponent.lanes.filter(l => l.locked).length;
-  const earlyGame = lockedLanes < totalLanes / 2;
-  
-  if (earlyGame) {
-    // Early game: energy is more valuable for burning threats
-    score += ai.energy * 25;
-    score -= opponent.energy * 25;
-  } else {
-    // Late game: energy matters less
-    score += ai.energy * 10;
-    score -= opponent.energy * 10;
-  }
-
-  // Flexibility (unlocked lanes) - more options is better
-  const aiUnlockedLanes = ai.lanes.filter(l => !l.locked).length;
-  const oppUnlockedLanes = opponent.lanes.filter(l => !l.locked).length;
-  score += aiUnlockedLanes * 25;
-  score -= oppUnlockedLanes * 25;
-  
-  // Relative advantage: having more unlocked lanes than opponent is key
-  if (aiUnlockedLanes > oppUnlockedLanes) {
-    score += 50; // Bonus for flexibility advantage
-  } else if (oppUnlockedLanes > aiUnlockedLanes) {
-    score -= 50; // Penalty for flexibility disadvantage
-  }
-
-  // ============================================================================
-  // GAME PROGRESSION
-  // ============================================================================
-
-  // Slight bonus for having cards in queue (more options)
-  if (state.queue.length > 0) {
-    score += 5;
-  }
-
-  return score;
-}

@@ -46,7 +46,12 @@ export {
   getEndReason,
   getWinnerExplanation,
   explainGameEnd,
-  detectSkillBadge
+  detectSkillBadge,
+  // Day 16: Draw analysis & decisiveness
+  analyzeDraw,
+  getDecisivenessScore,
+  getMissedWinOpportunities,
+  wasForcedDraw
 } from './analytics';
 
 export type {
