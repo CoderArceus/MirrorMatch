@@ -54,3 +54,7 @@ export type {
   SkillBadge,
   LaneOutcome
 } from './analytics';
+
+// AI
+export { chooseAction } from './ai';
+export type { AIDifficulty } from './ai';

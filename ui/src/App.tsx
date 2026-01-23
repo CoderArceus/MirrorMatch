@@ -7,26 +7,26 @@ import { useState, useEffect } from 'react';
 import {
   createInitialGameState,
   isActionLegal,
-  getLegalActions, // Import getLegalActions
+  getLegalActions,
   resolveTurn,
-  // Values
+  // Analytics
   classifyDraw,
   analyzeLane,
   detectSkillBadge,
-  explainGameEnd
+  explainGameEnd,
+  // AI
+  chooseAction
 } from '../../engine/src';
 
 import type {
   GameState,
   PlayerAction,
   TurnActions,
-  LaneState, // Import LaneState
+  LaneState,
   DrawReason,
-  SkillBadge
+  SkillBadge,
+  AIDifficulty
 } from '../../engine/src';
-
-import { chooseAIAction } from './ai';
-import type { AIDifficulty } from './ai';
 import { getMatchFromURL, createShareableURL } from './utils/encodeMatch';
 import type { EncodedMatch } from './utils/encodeMatch';
 import { runReplay } from '../../engine/src';
@@ -269,7 +269,7 @@ function App() {
 
   // AI Mode
   const [vsAI, setVsAI] = useState<boolean>(false);
-  const [aiDifficulty, setAIDifficulty] = useState<AIDifficulty>('normal');
+  const [aiDifficulty, setAIDifficulty] = useState<AIDifficulty>('medium');
   const [aiThinking, setAIThinking] = useState<boolean>(false);
 
   // Feedback
@@ -538,7 +538,7 @@ function App() {
 
     // Delay AI decision for UX (feels more natural)
     setTimeout(() => {
-      const aiAction = chooseAIAction(gameState, 'player2', aiDifficulty);
+      const aiAction = chooseAction(gameState, 'player2', aiDifficulty);
       console.log('AI chose action:', aiAction);
 
       // Need to read latest pendingActions
@@ -679,8 +679,7 @@ function App() {
                 className="difficulty-select"
               >
                 <option value="easy">Easy</option>
-                <option value="normal">Normal</option>
-                <option value="hard">Hard</option>
+                <option value="medium">Medium</option>
               </select>
             )}
 
