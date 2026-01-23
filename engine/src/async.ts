@@ -33,7 +33,6 @@ import { createInitialGameState } from './state';
 export interface ActionLogEntry {
   readonly playerId: string;
   readonly action: PlayerAction;
-  readonly turn: number; // Turn number when this action was submitted
 }
 
 // ============================================================================
@@ -44,24 +43,102 @@ export interface ActionLogEntry {
  * Complete representation of an async PvP match
  * 
  * CRITICAL INVARIANTS:
- * - state is always derivable from seed + actionLog
- * - nextPlayerId is authoritative (prevents both players acting simultaneously)
+ * - NO GameState stored directly (violates replay-first architecture)
+ * - State MUST be derived via replayAsyncMatch(match)
  * - actionLog is append-only (never modified, only appended)
+ * - nextPlayerId is authoritative (prevents both players acting simultaneously)
  * - No partial turns allowed (both players must act before turn resolves)
  * 
  * TURN MODEL:
  * - Match starts with nextPlayerId = player1
- * - Player 1 submits action → nextPlayerId becomes player2
- * - Player 2 submits action → turn resolves, nextPlayerId becomes player1
+ * - Player 1 submits action → stored in pendingAction, nextPlayerId becomes player2
+ * - Player 2 submits action → both actions appended to log, pendingAction cleared
  * - This creates a strict alternating submission pattern
+ * 
+ * REPLAY GUARANTEE:
+ * - Given same seed + player IDs + actionLog → identical GameState
+ * - This enables deterministic verification, debugging, and time-travel
  */
 export interface AsyncMatch {
   readonly matchId: string;
-  readonly seed: number; // Seed used to create initial state (for verification)
-  readonly state: GameState;
-  readonly actionLog: ReadonlyArray<ActionLogEntry>;
+  readonly seed: number; // Seed for deterministic initial state
+  readonly player1Id: string; // First player ID
+  readonly player2Id: string; // Second player ID
+  readonly actionLog: ReadonlyArray<ActionLogEntry>; // Completed actions only
+  readonly pendingAction: ActionLogEntry | null; // First player's action awaiting second
   readonly nextPlayerId: string; // Who must submit the next action
-  readonly pendingAction: ActionLogEntry | null; // Action submitted by first player, waiting for second
+}
+
+// ============================================================================
+// Replay Async Match (CORE INTEGRATION POINT)
+// ============================================================================
+
+/**
+ * Reconstructs GameState from an AsyncMatch by replaying the action log
+ * 
+ * CRITICAL: This is the ONLY way to get GameState from an AsyncMatch.
+ * No state snapshots are stored - everything is derived from replay.
+ * 
+ * PROCESS:
+ * 1. Start with createInitialGameState(seed)
+ * 2. Override player IDs
+ * 3. Replay actionLog in pairs using resolveTurn()
+ * 4. Return final state
+ * 
+ * @param match - Async match to replay
+ * @returns Current game state derived from action log
+ */
+export function replayAsyncMatch(match: AsyncMatch): GameState {
+  // Start with initial state
+  let state = createInitialGameState(match.seed);
+  
+  // Override player IDs to match the async match
+  state = {
+    ...state,
+    players: [
+      { ...state.players[0], id: match.player1Id },
+      { ...state.players[1], id: match.player2Id }
+    ]
+  };
+
+  // Replay completed actions in pairs (each turn needs both players)
+  const actionLog = match.actionLog;
+  
+  for (let i = 0; i < actionLog.length; i += 2) {
+    // Safety: should always have pairs, but handle edge case
+    if (i + 1 >= actionLog.length) {
+      // Incomplete turn - shouldn't happen if pendingAction is used correctly
+      break;
+    }
+
+    const action1 = actionLog[i];
+    const action2 = actionLog[i + 1];
+
+    // Determine which action belongs to which player
+    let player1Action: PlayerAction;
+    let player2Action: PlayerAction;
+
+    if (action1.playerId === match.player1Id) {
+      player1Action = action1.action;
+      player2Action = action2.action;
+    } else {
+      player1Action = action2.action;
+      player2Action = action1.action;
+    }
+
+    // Construct TurnActions for resolveTurn
+    const turnActions: TurnActions = {
+      playerActions: [
+        { playerId: match.player1Id, action: player1Action },
+        { playerId: match.player2Id, action: player2Action }
+      ]
+    };
+
+    // Resolve turn using existing engine logic
+    state = resolveTurn(state, turnActions);
+  }
+
+  return state;
 }
 
 // ============================================================================
@@ -69,7 +146,7 @@ export interface AsyncMatch {
 // ============================================================================
 
 /**
- * Creates a new async match with initial state
+ * Creates a new async match with empty action log
  * 
  * @param matchId - Unique identifier for this match
  * @param player1Id - ID of first player
@@ -83,29 +160,19 @@ export function createAsyncMatch(
   player2Id: string,
   seed: number
 ): AsyncMatch {
-  const initialState = createInitialGameState(seed);
-  
-  // Override player IDs with the actual player IDs
-  const stateWithPlayerIds: GameState = {
-    ...initialState,
-    players: [
-      { ...initialState.players[0], id: player1Id },
-      { ...initialState.players[1], id: player2Id }
-    ]
-  };
-
   return {
     matchId,
     seed,
-    state: stateWithPlayerIds,
+    player1Id,
+    player2Id,
     actionLog: [],
-    nextPlayerId: player1Id,
-    pendingAction: null
+    pendingAction: null,
+    nextPlayerId: player1Id
   };
 }
 
 // ============================================================================
-// Apply Async Action
+// Apply Async Action (CORE INTEGRATION POINT)
 // ============================================================================
 
 /**
@@ -120,13 +187,17 @@ export interface ApplyAsyncActionResult {
 /**
  * Applies a player action to an async match
  * 
- * LOGIC:
- * 1. Validate that it's the correct player's turn
- * 2. Validate that the action is legal
- * 3. If no pending action: store as pending, switch nextPlayerId
- * 4. If pending action exists: resolve turn with both actions
+ * INTEGRATION PATTERN:
+ * 1. Reconstruct current state via replayAsyncMatch()
+ * 2. Validate player turn
+ * 3. Validate action legality via isActionLegal()
+ * 4. If no pending action: store as pending, switch nextPlayerId
+ * 5. If pending action exists: append both to actionLog
  * 
- * @param match - Current async match state
+ * NO STATE DUPLICATION: All validation uses replayed state
+ * NO LOGIC DUPLICATION: All validation uses existing validators
+ * 
+ * @param match - Current async match
  * @param playerId - ID of player submitting action
  * @param action - Action being submitted
  * @returns Result with updated match or error
@@ -137,9 +208,14 @@ export function applyAsyncAction(
   action: PlayerAction
 ): ApplyAsyncActionResult {
   // ============================================================================
+  // STEP 1: Reconstruct current state via replay
+  // ============================================================================
+  const currentState = replayAsyncMatch(match);
+
+  // ============================================================================
   // VALIDATION: Game not over (check this first!)
   // ============================================================================
-  if (match.state.gameOver) {
+  if (currentState.gameOver) {
     return {
       success: false,
       match,
@@ -159,10 +235,10 @@ export function applyAsyncAction(
   }
 
   // ============================================================================
-  // VALIDATION: Action is legal
+  // VALIDATION: Action is legal (using existing validator)
   // ============================================================================
-  if (!isActionLegal(match.state, playerId, action)) {
-    const legalActions = getLegalActions(match.state, playerId);
+  if (!isActionLegal(currentState, playerId, action)) {
+    const legalActions = getLegalActions(currentState, playerId);
     return {
       success: false,
       match,
@@ -176,14 +252,11 @@ export function applyAsyncAction(
   if (match.pendingAction === null) {
     const logEntry: ActionLogEntry = {
       playerId,
-      action,
-      turn: match.state.turnNumber
+      action
     };
 
-    // Determine next player ID
-    const currentPlayerIndex = match.state.players.findIndex(p => p.id === playerId);
-    const nextPlayerIndex = (currentPlayerIndex + 1) % match.state.players.length;
-    const nextPlayerId = match.state.players[nextPlayerIndex].id;
+    // Determine next player ID (simple alternation)
+    const nextPlayerId = playerId === match.player1Id ? match.player2Id : match.player1Id;
 
     return {
       success: true,
@@ -196,56 +269,27 @@ export function applyAsyncAction(
   }
 
   // ============================================================================
-  // CASE 2: Pending action exists - resolve turn
+  // CASE 2: Pending action exists - append both to actionLog
   // ============================================================================
-  const player1Id = match.state.players[0].id;
-  const player2Id = match.state.players[1].id;
-
-  // Create current log entry
   const currentLogEntry: ActionLogEntry = {
     playerId,
-    action,
-    turn: match.state.turnNumber
+    action
   };
 
-  // Determine which action belongs to which player
-  let player1Action: PlayerAction;
-  let player2Action: PlayerAction;
-
-  if (match.pendingAction.playerId === player1Id) {
-    player1Action = match.pendingAction.action;
-    player2Action = currentLogEntry.action;
-  } else {
-    player1Action = currentLogEntry.action;
-    player2Action = match.pendingAction.action;
-  }
-
-  // Create TurnActions
-  const turnActions: TurnActions = {
-    playerActions: [
-      { playerId: player1Id, action: player1Action },
-      { playerId: player2Id, action: player2Action }
-    ]
-  };
-
-  // Resolve turn
-  const newState = resolveTurn(match.state, turnActions);
-
-  // Append both actions to log
+  // Append both actions to log (order preserved)
   const newActionLog = [
     ...match.actionLog,
     match.pendingAction,
     currentLogEntry
   ];
 
-  // Determine next player (always player 1 after a turn resolves)
-  const nextPlayerId = newState.gameOver ? match.nextPlayerId : player1Id;
+  // After turn resolves, it's always player1's turn again
+  const nextPlayerId = match.player1Id;
 
   return {
     success: true,
     match: {
       ...match,
-      state: newState,
       actionLog: newActionLog,
       pendingAction: null,
       nextPlayerId
@@ -272,6 +316,8 @@ export interface AsyncMatchStatus {
 /**
  * Gets the current status of an async match for a specific player
  * 
+ * Uses replayAsyncMatch to derive current state
+ * 
  * @param match - Current async match
  * @param playerId - ID of player checking status
  * @returns Status information
@@ -280,17 +326,20 @@ export function getAsyncMatchStatus(
   match: AsyncMatch,
   playerId: string
 ): AsyncMatchStatus {
+  // Reconstruct current state via replay
+  const currentState = replayAsyncMatch(match);
+  
   const isYourTurn = match.nextPlayerId === playerId;
-  const legalActions = isYourTurn && !match.state.gameOver
-    ? getLegalActions(match.state, playerId)
+  const legalActions = isYourTurn && !currentState.gameOver
+    ? getLegalActions(currentState, playerId)
     : [];
 
   return {
     isYourTurn,
     waitingFor: isYourTurn ? null : match.nextPlayerId,
-    gameOver: match.state.gameOver,
-    winner: match.state.winner,
-    turnNumber: match.state.turnNumber,
+    gameOver: currentState.gameOver,
+    winner: currentState.winner,
+    turnNumber: currentState.turnNumber,
     legalActions
   };
 }
@@ -300,71 +349,41 @@ export function getAsyncMatchStatus(
 // ============================================================================
 
 /**
- * Verifies that a match's state matches its action log
- * Used for debugging and ensuring consistency
+ * Verifies that a match is valid and can be replayed successfully
+ * 
+ * VALIDATION:
+ * - Match has valid seed
+ * - Player IDs are present
+ * - Action log has even number of entries (complete turns only)
+ * - Replay succeeds without errors
  * 
  * @param match - Match to verify
- * @returns true if match is valid, false otherwise
+ * @returns true if match is valid
  */
 export function verifyAsyncMatch(match: AsyncMatch): boolean {
-  // Recreate state from seed
-  let reconstructedState = createInitialGameState(match.seed);
-  
-  // Override player IDs
-  reconstructedState = {
-    ...reconstructedState,
-    players: [
-      { ...reconstructedState.players[0], id: match.state.players[0].id },
-      { ...reconstructedState.players[1], id: match.state.players[1].id }
-    ]
-  };
-
-  // Replay all completed turns from action log
-  const completedActions = match.pendingAction
-    ? match.actionLog
-    : match.actionLog;
-
-  // Process actions in pairs (each turn needs both player actions)
-  for (let i = 0; i < completedActions.length; i += 2) {
-    if (i + 1 >= completedActions.length) {
-      // Incomplete turn - shouldn't happen if pendingAction is tracked correctly
-      break;
+  try {
+    // Basic validation
+    if (!match.matchId || !match.player1Id || !match.player2Id) {
+      return false;
     }
 
-    const action1 = completedActions[i];
-    const action2 = completedActions[i + 1];
-
-    const player1Id = reconstructedState.players[0].id;
-    const player2Id = reconstructedState.players[1].id;
-
-    // Determine which action belongs to which player
-    let player1Action: PlayerAction;
-    let player2Action: PlayerAction;
-
-    if (action1.playerId === player1Id) {
-      player1Action = action1.action;
-      player2Action = action2.action;
-    } else {
-      player1Action = action2.action;
-      player2Action = action1.action;
+    // Action log should have even number of entries (complete turns)
+    // If pendingAction exists, that's fine - it's not in the log yet
+    if (match.actionLog.length % 2 !== 0) {
+      return false;
     }
 
-    const turnActions: TurnActions = {
-      playerActions: [
-        { playerId: player1Id, action: player1Action },
-        { playerId: player2Id, action: player2Action }
-      ]
-    };
-
-    reconstructedState = resolveTurn(reconstructedState, turnActions);
+    // Attempt replay - if it throws, match is invalid
+    const state = replayAsyncMatch(match);
+    
+    // Verify state is valid
+    return (
+      state.players.length === 2 &&
+      state.players[0].id === match.player1Id &&
+      state.players[1].id === match.player2Id
+    );
+  } catch (error) {
+    // Replay failed - match is invalid
+    return false;
   }
-
-  // Compare key fields (we can't do deep equality easily, so check critical fields)
-  return (
-    reconstructedState.turnNumber === match.state.turnNumber &&
-    reconstructedState.gameOver === match.state.gameOver &&
-    reconstructedState.winner === match.state.winner &&
-    reconstructedState.deck.length === match.state.deck.length &&
-    reconstructedState.queue.length === match.state.queue.length
-  );
 }

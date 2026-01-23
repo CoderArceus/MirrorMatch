@@ -9,6 +9,7 @@ import {
   applyAsyncAction,
   getAsyncMatchStatus,
   verifyAsyncMatch,
+  replayAsyncMatch,
   type AsyncMatch
 } from '../src/async';
 import type { PlayerAction } from '../src/types';
@@ -24,13 +25,18 @@ describe('Async PvP System', () => {
 
       expect(match.matchId).toBe('match-1');
       expect(match.seed).toBe(12345);
-      expect(match.state.players[0].id).toBe('alice');
-      expect(match.state.players[1].id).toBe('bob');
+      expect(match.player1Id).toBe('alice');
+      expect(match.player2Id).toBe('bob');
       expect(match.actionLog).toHaveLength(0);
       expect(match.nextPlayerId).toBe('alice');
       expect(match.pendingAction).toBeNull();
-      expect(match.state.gameOver).toBe(false);
-      expect(match.state.turnNumber).toBe(1);
+      
+      // Verify initial state via replay
+      const state = replayAsyncMatch(match);
+      expect(state.players[0].id).toBe('alice');
+      expect(state.players[1].id).toBe('bob');
+      expect(state.gameOver).toBe(false);
+      expect(state.turnNumber).toBe(1);
     });
 
     it('should create deterministic initial state from seed', () => {
@@ -38,8 +44,10 @@ describe('Async PvP System', () => {
       const match2 = createAsyncMatch('m2', 'p1', 'p2', 42);
 
       // Same seed should produce same deck order
-      expect(match1.state.deck).toEqual(match2.state.deck);
-      expect(match1.state.queue).toEqual(match2.state.queue);
+      const state1 = replayAsyncMatch(match1);
+      const state2 = replayAsyncMatch(match2);
+      expect(state1.deck).toEqual(state2.deck);
+      expect(state1.queue).toEqual(state2.queue);
     });
 
     it('should create different initial states from different seeds', () => {
@@ -47,7 +55,9 @@ describe('Async PvP System', () => {
       const match2 = createAsyncMatch('m2', 'p1', 'p2', 99);
 
       // Different seeds should produce different deck orders
-      expect(match1.state.deck).not.toEqual(match2.state.deck);
+      const state1 = replayAsyncMatch(match1);
+      const state2 = replayAsyncMatch(match2);
+      expect(state1.deck).not.toEqual(state2.deck);
     });
   });
 
@@ -67,7 +77,10 @@ describe('Async PvP System', () => {
       expect(result.match.pendingAction?.playerId).toBe('alice');
       expect(result.match.pendingAction?.action).toEqual(action);
       expect(result.match.nextPlayerId).toBe('bob');
-      expect(result.match.state.turnNumber).toBe(1); // Turn hasn't resolved yet
+      
+      // Turn hasn't resolved yet - verify via replay
+      const state = replayAsyncMatch(result.match);
+      expect(state.turnNumber).toBe(1);
     });
 
     it('should reject action from wrong player', () => {
@@ -111,16 +124,20 @@ describe('Async PvP System', () => {
 
       expect(result2.success).toBe(true);
       expect(result2.match.pendingAction).toBeNull(); // Turn resolved
-      expect(result2.match.state.turnNumber).toBe(2); // Turn incremented
       expect(result2.match.nextPlayerId).toBe('alice'); // Back to player 1
       expect(result2.match.actionLog).toHaveLength(2); // Both actions logged
+      
+      // Verify turn incremented via replay
+      const state = replayAsyncMatch(result2.match);
+      expect(state.turnNumber).toBe(2);
     });
 
     it('should apply both actions to game state', () => {
       const match = createAsyncMatch('match-1', 'alice', 'bob', 12345);
       
       // Get the front card before actions
-      const frontCard = match.state.queue[0];
+      const initialState = replayAsyncMatch(match);
+      const frontCard = initialState.queue[0];
 
       // Both players take the same card
       const action: PlayerAction = { type: 'take', targetLane: 0 };
@@ -128,11 +145,14 @@ describe('Async PvP System', () => {
       let result = applyAsyncAction(match, 'alice', action);
       result = applyAsyncAction(result.match, 'bob', action);
 
+      // Verify via replay
+      const finalState = replayAsyncMatch(result.match);
+      
       // Both players should have the card in lane 0
-      expect(result.match.state.players[0].lanes[0].cards).toHaveLength(1);
-      expect(result.match.state.players[1].lanes[0].cards).toHaveLength(1);
-      expect(result.match.state.players[0].lanes[0].cards[0].id).toBe(frontCard.id);
-      expect(result.match.state.players[1].lanes[0].cards[0].id).toBe(frontCard.id);
+      expect(finalState.players[0].lanes[0].cards).toHaveLength(1);
+      expect(finalState.players[1].lanes[0].cards).toHaveLength(1);
+      expect(finalState.players[0].lanes[0].cards[0].id).toBe(frontCard.id);
+      expect(finalState.players[1].lanes[0].cards[0].id).toBe(frontCard.id);
     });
 
     it('should handle burn actions correctly', () => {
@@ -146,11 +166,15 @@ describe('Async PvP System', () => {
       result = applyAsyncAction(result.match, 'bob', burnAction);
 
       expect(result.success).toBe(true);
+      
+      // Verify via replay
+      const state = replayAsyncMatch(result.match);
+      
       // Alice should get an Ash card (value 1)
-      expect(result.match.state.players[0].lanes[0].cards).toHaveLength(1);
-      expect(result.match.state.players[0].lanes[0].cards[0].rank).toBe('ASH');
+      expect(state.players[0].lanes[0].cards).toHaveLength(1);
+      expect(state.players[0].lanes[0].cards[0].rank).toBe('ASH');
       // Bob should have spent energy
-      expect(result.match.state.players[1].energy).toBe(2);
+      expect(state.players[1].energy).toBe(2);
     });
 
     it('should handle stand actions correctly', () => {
@@ -163,9 +187,13 @@ describe('Async PvP System', () => {
       result = applyAsyncAction(result.match, 'bob', standAction);
 
       expect(result.success).toBe(true);
+      
+      // Verify via replay
+      const state = replayAsyncMatch(result.match);
+      
       // Both players' lane 0 should be locked
-      expect(result.match.state.players[0].lanes[0].locked).toBe(true);
-      expect(result.match.state.players[1].lanes[0].locked).toBe(true);
+      expect(state.players[0].lanes[0].locked).toBe(true);
+      expect(state.players[1].lanes[0].locked).toBe(true);
     });
   });
 
@@ -180,19 +208,22 @@ describe('Async PvP System', () => {
       // Turn 1
       let result = applyAsyncAction(match, 'alice', { type: 'take', targetLane: 0 });
       result = applyAsyncAction(result.match, 'bob', { type: 'take', targetLane: 0 });
-      expect(result.match.state.turnNumber).toBe(2);
+      let state = replayAsyncMatch(result.match);
+      expect(state.turnNumber).toBe(2);
       expect(result.match.nextPlayerId).toBe('alice');
 
       // Turn 2
       result = applyAsyncAction(result.match, 'alice', { type: 'take', targetLane: 1 });
       result = applyAsyncAction(result.match, 'bob', { type: 'take', targetLane: 1 });
-      expect(result.match.state.turnNumber).toBe(3);
+      state = replayAsyncMatch(result.match);
+      expect(state.turnNumber).toBe(3);
       expect(result.match.nextPlayerId).toBe('alice');
 
       // Turn 3
       result = applyAsyncAction(result.match, 'alice', { type: 'take', targetLane: 2 });
       result = applyAsyncAction(result.match, 'bob', { type: 'take', targetLane: 2 });
-      expect(result.match.state.turnNumber).toBe(4);
+      state = replayAsyncMatch(result.match);
+      expect(state.turnNumber).toBe(4);
       
       expect(result.match.actionLog).toHaveLength(6); // 3 turns × 2 actions
     });
@@ -207,10 +238,8 @@ describe('Async PvP System', () => {
       const log = result.match.actionLog;
       expect(log[0].playerId).toBe('alice');
       expect(log[0].action.type).toBe('take');
-      expect(log[0].turn).toBe(1);
       expect(log[1].playerId).toBe('bob');
       expect(log[1].action.type).toBe('burn');
-      expect(log[1].turn).toBe(1);
     });
   });
 
@@ -229,8 +258,9 @@ describe('Async PvP System', () => {
         match = result.match;
       }
 
-      // Game should be over now
-      expect(match.state.gameOver).toBe(true);
+      // Game should be over now - verify via replay
+      const state = replayAsyncMatch(match);
+      expect(state.gameOver).toBe(true);
 
       // Try to take another action - should fail because game is over
       const afterGameResult = applyAsyncAction(match, 'alice', { type: 'pass' });
@@ -351,12 +381,17 @@ describe('Async PvP System', () => {
         if (!result.success) break;
         match = result.match;
         
-        if (match.state.gameOver) break;
+        // Check if game is over via replay
+        const state = replayAsyncMatch(match);
+        if (state.gameOver) break;
       }
 
+      // Verify final state via replay
+      const finalState = replayAsyncMatch(match);
+      
       // If game is over, that's fine - we tested the system works
       // If not over, check if pass is available when it should be
-      if (!match.state.gameOver) {
+      if (!finalState.gameOver) {
         const status = getAsyncMatchStatus(match, match.nextPlayerId);
         // Pass should be available if no other actions exist
         if (status.legalActions.length === 1 && status.legalActions[0].type === 'pass') {
@@ -365,7 +400,7 @@ describe('Async PvP System', () => {
       }
       
       // Main assertion: the game should reach an end state without deadlock
-      expect(match.state.gameOver || match.actionLog.length > 0).toBe(true);
+      expect(finalState.gameOver || match.actionLog.length > 0).toBe(true);
     });
 
     it('should maintain alternating turn order throughout game', () => {

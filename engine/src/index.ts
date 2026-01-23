@@ -64,10 +64,11 @@ export type {
 export { chooseAction } from './ai';
 export type { AIDifficulty } from './ai';
 
-// Async PvP
+// Async PvP (INTEGRATION POINT)
 export {
   createAsyncMatch,
   applyAsyncAction,
+  replayAsyncMatch,
   getAsyncMatchStatus,
   verifyAsyncMatch
 } from './async';
