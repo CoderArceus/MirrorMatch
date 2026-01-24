@@ -1290,3 +1290,97 @@ body {
     max-height: 300px;
   }
 }
+
+/* ============================================================================ */
+/* Day 25: Post-Game Explanation Panel */
+/* ============================================================================ */
+
+.post-game-explanation {
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  color: white;
+  border-radius: 12px;
+  padding: 2rem;
+  margin: 2rem 0;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+}
+
+.post-game-explanation h3 {
+  margin: 0 0 1.5rem 0;
+  font-size: 2rem;
+  text-align: center;
+  text-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+}
+
+.strategic-summary {
+  background: rgba(255, 255, 255, 0.15);
+  border-radius: 8px;
+  padding: 1.5rem;
+  margin-bottom: 1rem;
+  backdrop-filter: blur(10px);
+}
+
+.strategic-summary p {
+  margin: 0;
+  font-size: 1.1rem;
+  line-height: 1.6;
+  text-align: center;
+  font-weight: 500;
+}
+
+/* Draw Metrics Badges */
+.draw-metrics {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.75rem;
+  justify-content: center;
+  margin-top: 1rem;
+}
+
+.metric-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.25rem;
+  padding: 0.5rem 1rem;
+  background: rgba(255, 255, 255, 0.25);
+  border-radius: 20px;
+  font-size: 0.9rem;
+  font-weight: 600;
+  cursor: help;
+  transition: background 0.2s;
+}
+
+.metric-badge:hover {
+  background: rgba(255, 255, 255, 0.35);
+}
+
+.metric-badge.high-pressure {
+  background: rgba(244, 67, 54, 0.3);
+}
+
+.metric-badge.energy-remaining {
+  background: rgba(255, 193, 7, 0.3);
+}
+
+.metric-badge.forced-passes {
+  background: rgba(96, 125, 139, 0.3);
+}
+
+/* Responsive adjustments */
+@media (max-width: 768px) {
+  .post-game-explanation {
+    padding: 1.5rem;
+  }
+  
+  .post-game-explanation h3 {
+    font-size: 1.5rem;
+  }
+  
+  .strategic-summary p {
+    font-size: 1rem;
+  }
+  
+  .metric-badge {
+    font-size: 0.85rem;
+    padding: 0.4rem 0.8rem;
+  }
+}

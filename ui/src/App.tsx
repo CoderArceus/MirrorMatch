@@ -14,6 +14,7 @@ import {
   analyzeLane,
   detectSkillBadge,
   explainGameEnd,
+  analyzeDrawDiagnostics,
   // AI
   chooseAction
 } from '../../engine/src';
@@ -224,6 +225,152 @@ function saveFeedback(feedback: Feedback): void {
 
 
 function App() {
+  // ============================================================================
+  // Day 25: Post-Game Explanation Logic (UI Mapping Only)
+  // ============================================================================
+  
+  /**
+   * Generate human-friendly strategic summary for game outcome
+   * Pure mapping function - consumes existing analytics, no new logic
+   */
+  const generateStrategicSummary = (state: GameState, viewerPlayerId: 'player1' | 'player2'): string => {
+    const isWin = state.winner === viewerPlayerId;
+    const isDraw = state.winner === null;
+    
+    if (isWin) {
+      return generateWinSummary(state, viewerPlayerId);
+    } else if (isDraw) {
+      return generateDrawSummary(state);
+    } else {
+      return generateLossSummary(state, viewerPlayerId);
+    }
+  };
+  
+  /**
+   * Win summary - uses lane analysis to explain victory
+   */
+  const generateWinSummary = (state: GameState, playerId: 'player1' | 'player2'): string => {
+    const player = state.players.find(p => p.id === playerId)!;
+    const opponent = state.players.find(p => p.id !== playerId)!;
+    
+    // Analyze lanes
+    const p1Lanes = state.players[0].lanes;
+    const p2Lanes = state.players[1].lanes;
+    const outcomes = [
+      analyzeLane(p1Lanes[0], p2Lanes[0]),
+      analyzeLane(p1Lanes[1], p2Lanes[1]),
+      analyzeLane(p1Lanes[2], p2Lanes[2]),
+    ];
+    
+    const myWins = outcomes.filter(o => o.winner === playerId).length;
+    const opponentBusts = opponent.lanes.filter(l => l.busted).length;
+    const my21s = player.lanes.filter(l => l.total === 21 && !l.busted).length;
+    
+    // Pattern matching for explanation
+    if (opponentBusts >= 2) {
+      return "You won because your opponent overextended and busted multiple lanes.";
+    }
+    
+    if (my21s >= 2) {
+      return "You secured victory with precision play, hitting 21 in multiple lanes.";
+    }
+    
+    if (player.energy > opponent.energy) {
+      return "Your superior energy management and strategic positioning secured the victory.";
+    }
+    
+    if (myWins === 2) {
+      return "You won by securing two strong lanes with better positioning.";
+    }
+    
+    return "You made strategic decisions that gave you the decisive advantage.";
+  };
+  
+  /**
+   * Loss summary - symmetric inverse of win
+   */
+  const generateLossSummary = (state: GameState, playerId: 'player1' | 'player2'): string => {
+    const player = state.players.find(p => p.id === playerId)!;
+    const opponent = state.players.find(p => p.id !== playerId)!;
+    
+    const myBusts = player.lanes.filter(l => l.busted).length;
+    const opponent21s = opponent.lanes.filter(l => l.total === 21 && !l.busted).length;
+    
+    if (myBusts >= 2) {
+      return "You lost by overextending and busting multiple lanes.";
+    }
+    
+    if (opponent21s >= 2) {
+      return "Your opponent secured victory with precision play, hitting 21 in multiple lanes.";
+    }
+    
+    if (opponent.energy > player.energy) {
+      return "Your opponent's superior energy management gave them the advantage.";
+    }
+    
+    return "Your opponent secured two strong lanes with better strategic positioning.";
+  };
+  
+  /**
+   * Draw summary - uses analyzeDrawDiagnostics for pressure framing
+   */
+  const generateDrawSummary = (state: GameState): string => {
+    const drawInfo = classifyDraw(state);
+    const diagnostics = analyzeDrawDiagnostics(state, 'player1', 'player2', actionHistory.flatMap(turn => 
+      turn.playerActions.map(pa => ({ playerId: pa.playerId, action: pa.action }))
+    ));
+    
+    // Calculate pressure indicators
+    const avgWinThreats = (diagnostics.p1.winThreats + diagnostics.p2.winThreats) / 2;
+    const avgEnergyRemaining = (diagnostics.p1.energyRemaining + diagnostics.p2.energyRemaining) / 2;
+    
+    const isHighPressure = avgWinThreats >= 2;
+    const isLowPressure = avgEnergyRemaining >= 2;
+    
+    // Build explanation with pressure framing
+    let explanation = '';
+    
+    switch (drawInfo.type) {
+      case 'perfect_symmetry':
+        explanation = 'Perfect mirror play — both players made identical optimal decisions.';
+        break;
+      case 'mutual_perfection':
+        explanation = 'Rare outcome — both players hit optimal totals. This represents elite-level play.';
+        break;
+      case 'lane_split':
+        explanation = 'This match ended in a draw due to lane split.';
+        if (isHighPressure) {
+          explanation += ' Both players created strong win threats, resulting in high-pressure competitive play.';
+        } else {
+          explanation += ' Neither player could force a decisive advantage.';
+        }
+        break;
+      case 'mutual_pass':
+        explanation = 'Both players passed with cards remaining, choosing to lock in the current state.';
+        break;
+      case 'stall_equilibrium':
+        explanation = 'Both players reached optimal positions early and locked all lanes.';
+        break;
+      case 'deck_exhausted':
+        explanation = 'The deck was exhausted with lanes in a tied state.';
+        break;
+      case 'energy_exhaustion':
+        explanation = 'Strategic deadlock — both players exhausted their energy in a perfectly balanced exchange.';
+        break;
+      default:
+        explanation = 'Both players reached equilibrium with no clear advantage.';
+    }
+    
+    // Add pressure context
+    if (isHighPressure && drawInfo.type === 'lane_split') {
+      explanation += ' Elite-level competitive balance.';
+    } else if (isLowPressure && drawInfo.type !== 'energy_exhaustion') {
+      explanation += ' Both players had remaining resources but chose not to risk their positions.';
+    }
+    
+    return explanation;
+  };
+  
   // ============================================================================
   // Dynamic Action Rendering Components
   // ============================================================================
@@ -1008,23 +1155,64 @@ function App() {
               </div>
             </div>
 
-            {/* Draw Diagnostics */}
-            {!gameState.winner && (
-              <div className="draw-diagnostics">
-                <h3>🤝 Draw Analysis</h3>
-                <p className="draw-classification">{classifyDraw(gameState).explanation}</p>
-                <p className="draw-note">
-                  This represents a <strong>solved equilibrium</strong> state where neither player could force an advantage.
-                </p>
+            {/* Day 25: Post-Game Explanation Panel */}
+            <div className="post-game-explanation">
+              <h3>
+                {gameState.winner === myPlayerRole && '🎉 You Win!'}
+                {gameState.winner && gameState.winner !== myPlayerRole && '💔 You Lost'}
+                {!gameState.winner && '🤝 Draw'}
+              </h3>
+              
+              {/* Strategic Summary */}
+              <div className="strategic-summary">
+                <p>{generateStrategicSummary(gameState, asyncMode ? myPlayerRole : 'player1')}</p>
+              </div>
+              
+              {/* Metrics Badges (Optional, lightweight) */}
+              {!gameState.winner && (
+                <div className="draw-metrics">
+                  {(() => {
+                    const diagnostics = analyzeDrawDiagnostics(
+                      gameState, 
+                      'player1', 
+                      'player2', 
+                      actionHistory.flatMap(turn => turn.playerActions.map(pa => ({ playerId: pa.playerId, action: pa.action })))
+                    );
+                    const viewerMetrics = myPlayerRole === 'player1' ? diagnostics.p1 : diagnostics.p2;
+                    
+                    return (
+                      <>
+                        {viewerMetrics.winThreats >= 2 && (
+                          <span className="metric-badge high-pressure" title="You had multiple lanes close to winning">
+                            ⚔️ High Pressure
+                          </span>
+                        )}
+                        {viewerMetrics.energyRemaining >= 2 && (
+                          <span className="metric-badge energy-remaining" title="You had energy remaining at game end">
+                            ⚡ Energy: {viewerMetrics.energyRemaining}
+                          </span>
+                        )}
+                        {viewerMetrics.forcedPasses > 0 && (
+                          <span className="metric-badge forced-passes" title="Number of pass actions taken">
+                            🚫 Passes: {viewerMetrics.forcedPasses}
+                          </span>
+                        )}
+                      </>
+                    );
+                  })()}
+                </div>
+              )}
+            </div>
+
+            {/* Legacy game summary for non-async modes */}
+            {!asyncMode && (
+              <div className="game-over-explanation">
+                <h3>Game Summary</h3>
+                {explainGameEnd(gameState).map((explanation, idx) => (
+                  <p key={idx} className="explanation-line">• {explanation}</p>
+                ))}
               </div>
             )}
-
-            <div className="game-over-explanation">
-              <h3>Game Summary</h3>
-              {explainGameEnd(gameState).map((explanation, idx) => (
-                <p key={idx} className="explanation-line">• {explanation}</p>
-              ))}
-            </div>
 
             {/* Skill Badge */}
             {(() => {
