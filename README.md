@@ -283,14 +283,21 @@ MirrorMatch is deployed as a **static frontend** with no backend required.
 
 ### Hosting
 
-The app is configured for **Vercel** deployment:
+The app is configured for **Vercel** deployment.
 
+**Option 1: Vercel Dashboard (Recommended)**
+1. Go to [vercel.com](https://vercel.com) and sign in with GitHub
+2. Click "Add New Project"
+3. Import the `CoderArceus/MirrorMatch` repository
+4. Set **Root Directory** to `ui`
+5. Framework will auto-detect as Vite
+6. Click Deploy
+
+**Option 2: Vercel CLI**
 ```bash
-# Install Vercel CLI
 npm i -g vercel
-
-# Deploy
 cd ui
+vercel login
 vercel --prod
 ```
 
