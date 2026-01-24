@@ -135,6 +135,11 @@ interface ScoringConfig {
 
   // Strategic Multipliers
   SECOND_LANE_WIN_BONUS: number; // Bonus for securing 2nd lane (match win)
+  
+  // DAY 21: Decisiveness tuning bonuses
+  EXCLUSIVE_THREAT_BONUS?: number; // Reward creating win threats opponent doesn't have
+  LANE_CLOSURE_BONUS?: number; // Reward locking strong lanes (≥18)
+  MUTUAL_PERFECTION_PENALTY?: number; // Penalize symmetric high totals
 }
 
 const MEDIUM_CONFIG: ScoringConfig = {
@@ -186,7 +191,12 @@ const HARD_CONFIG: ScoringConfig = {
   PASS_PENALTY: -1000, // heavily discouraged
   LOCK_WEAK_LANE_PENALTY: -300,
 
-  SECOND_LANE_WIN_BONUS: 500,
+  SECOND_LANE_WIN_BONUS: 800, // Increased to push for match wins
+  
+  // DAY 21: Decisiveness tuning
+  EXCLUSIVE_THREAT_BONUS: 400, // Reward asymmetric pressure creation
+  LANE_CLOSURE_BONUS: 350, // Reward finishing strong lanes
+  MUTUAL_PERFECTION_PENALTY: -200, // Discourage symmetric near-21 positions
 };
 
 // ============================================================================
@@ -248,6 +258,28 @@ function scoreAction(
         if (oppUnlocked) score += config.DENY_OPPONENT;
       }
 
+      // DAY 21: Exclusive Threat Bonus
+      // Reward creating a win threat (≤3 from 21) when opponent doesn't have one on same lane
+      if (config.EXCLUSIVE_THREAT_BONUS && newTotal >= 18 && newTotal <= 21) {
+        const oppLane = opponent.lanes[action.targetLane];
+        const oppTotal = oppLane.total;
+        const isExclusiveThreat = oppTotal < 18 || oppTotal > 21 || oppLane.busted;
+        if (isExclusiveThreat) {
+          score += config.EXCLUSIVE_THREAT_BONUS;
+        }
+      }
+
+      // DAY 21: Anti-Mutual-Perfection Penalty
+      // Penalize moves that create symmetric near-21 positions
+      if (config.MUTUAL_PERFECTION_PENALTY && newTotal >= 18 && newTotal <= 21) {
+        const oppLane = opponent.lanes[action.targetLane];
+        const oppTotal = oppLane.total;
+        // If opponent also has a strong position (18-21), penalize creating symmetry
+        if (oppTotal >= 18 && oppTotal <= 21 && Math.abs(newTotal - oppTotal) <= 1) {
+          score += config.MUTUAL_PERFECTION_PENALTY;
+        }
+      }
+
       break;
     }
 
@@ -275,6 +307,12 @@ function scoreAction(
       const winningThis = targetLane.total > oppLane.total && !oppLane.busted;
       if (myLockedWins === 1 && winningThis && targetLane.total >= 17) {
         score += config.SECOND_LANE_WIN_BONUS;
+      }
+
+      // DAY 21: Lane Closure Bonus
+      // Reward locking strong lanes (≥18) to secure advantage
+      if (config.LANE_CLOSURE_BONUS && targetLane.total >= 18 && targetLane.total <= 21) {
+        score += config.LANE_CLOSURE_BONUS;
       }
 
       break;
