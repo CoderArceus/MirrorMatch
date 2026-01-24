@@ -315,6 +315,26 @@ input:focus, select:focus, textarea:focus {
   animation: fadeIn var(--transition-normal);
 }
 
+/* Replay Truncated Warning */
+.replay-truncated {
+  position: fixed;
+  top: calc(var(--sp-4) + 40px);
+  left: 50%;
+  transform: translateX(-50%);
+  display: flex;
+  align-items: center;
+  gap: var(--sp-2);
+  padding: var(--sp-2) var(--sp-4);
+  background: var(--orange-dim);
+  border: 1px solid var(--orange);
+  border-radius: var(--radius-full);
+  font-size: 0.85rem;
+  font-weight: 600;
+  color: var(--orange);
+  z-index: var(--z-toast);
+  animation: fadeIn var(--transition-normal);
+}
+
 /* Version Footer */
 .app-footer {
   position: fixed;
@@ -323,12 +343,28 @@ input:focus, select:focus, textarea:focus {
   right: 0;
   display: flex;
   justify-content: center;
+  align-items: center;
+  gap: var(--sp-2);
   padding: var(--sp-2);
   font-size: 0.7rem;
   font-family: var(--font-mono);
   color: var(--text-disabled);
-  pointer-events: none;
   z-index: 1;
+  pointer-events: auto;
+}
+
+.app-footer a {
+  color: var(--text-muted);
+  text-decoration: none;
+  transition: color var(--transition-fast);
+}
+
+.app-footer a:hover {
+  color: var(--blue);
+}
+
+.footer-sep {
+  opacity: 0.5;
 }
 
 /* Fatal Error Screen */
@@ -374,6 +410,11 @@ input:focus, select:focus, textarea:focus {
   line-height: 1.5;
 }
 
+.error-actions {
+  display: flex;
+  gap: var(--sp-3);
+}
+
 .error-btn {
   padding: var(--sp-3) var(--sp-6);
   background: var(--gradient-primary);
@@ -384,11 +425,28 @@ input:focus, select:focus, textarea:focus {
   font-weight: 700;
   cursor: pointer;
   transition: all var(--transition-fast);
+  -webkit-tap-highlight-color: transparent;
+  touch-action: manipulation;
 }
 
 .error-btn:hover {
   transform: translateY(-2px);
   box-shadow: var(--shadow-glow-blue);
+}
+
+.error-btn:active {
+  transform: translateY(0);
+}
+
+.error-btn.secondary {
+  background: var(--bg-tertiary);
+  border: 1px solid var(--border-default);
+  color: var(--text-secondary);
+}
+
+.error-btn.secondary:hover {
+  background: var(--bg-hover);
+  box-shadow: none;
 }
 
 /* Card Animations */

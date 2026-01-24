@@ -509,11 +509,18 @@
   color: var(--text-primary);
   cursor: pointer;
   transition: all var(--transition-fast);
+  -webkit-tap-highlight-color: transparent;
+  touch-action: manipulation;
+  user-select: none;
 }
 
 .action-btn:hover {
   transform: translateY(-3px);
   background: rgba(0, 0, 0, 0.4);
+}
+
+.action-btn:active {
+  transform: translateY(0);
 }
 
 .burn-btn-inner {
@@ -648,6 +655,9 @@
   color: var(--text-secondary);
   cursor: pointer;
   transition: all var(--transition-fast);
+  -webkit-tap-highlight-color: transparent;
+  touch-action: manipulation;
+  user-select: none;
 }
 
 .chip:hover:not(:disabled):not(.invalid) {
@@ -676,11 +686,18 @@
   cursor: pointer;
   transition: all var(--transition-fast);
   box-shadow: 0 4px 20px var(--purple-glow);
+  -webkit-tap-highlight-color: transparent;
+  touch-action: manipulation;
+  user-select: none;
 }
 
 .submit-btn:hover {
   transform: translateY(-2px);
   box-shadow: 0 8px 30px var(--purple-glow);
+}
+
+.submit-btn:active {
+  transform: translateY(0);
 }
 
 /* ============================================

@@ -7,6 +7,13 @@ A tactical card battler where you and your opponent share the same deck. Manage 
 ![React](https://img.shields.io/badge/React-19-61DAFB)
 ![Vite](https://img.shields.io/badge/Vite-7-646CFF)
 
+## 💡 How MirrorMatch Works
+
+- **The link IS the game** — No accounts, no servers, no databases
+- **Fully deterministic** — Same seed + actions = identical game state
+- **Replay-first architecture** — States reconstructed by replaying actions
+- **Async PvP via URLs** — Create match → Share link → Opponent plays → Repeat
+
 ## 🎯 Game Overview
 
 MirrorMatch is a simultaneous-turn card game where two players compete to win 2 out of 3 lanes. Each lane works like Blackjack - get as close to 21 as possible without going over. The twist? Both players draw from the **same shared queue** of cards.

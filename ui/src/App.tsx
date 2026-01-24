@@ -1,9 +1,10 @@
 /**
- * MirrorMatch - Production Ready
+ * MirrorMatch - Production Ready (Day 38)
  * Static frontend with replay-first determinism
  */
 
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, Component } from 'react';
+import type { ErrorInfo, ReactNode } from 'react';
 import type { GameState, PlayerAction, TurnActions, AIDifficulty } from '../../engine/src';
 import { 
   createInitialGameState, 
@@ -22,12 +23,77 @@ import './App.css';
 
 // Production constants
 const APP_VERSION = '2.5';
-const MAX_REPLAY_TURNS = 100; // Safety cap for replay
+const MAX_REPLAY_TURNS = 100;
+const IS_PRODUCTION = import.meta.env.PROD;
+const GITHUB_URL = 'https://github.com/CoderArceus/MirrorMatch';
+
+// Disable console in production (except errors)
+if (IS_PRODUCTION) {
+  console.log = () => {};
+  console.info = () => {};
+  console.debug = () => {};
+  console.warn = () => {};
+}
+
+// Error Boundary Component
+interface ErrorBoundaryProps {
+  children: ReactNode;
+  onReset: () => void;
+}
+
+interface ErrorBoundaryState {
+  hasError: boolean;
+  error: Error | null;
+}
+
+class ErrorBoundary extends Component<ErrorBoundaryProps, ErrorBoundaryState> {
+  constructor(props: ErrorBoundaryProps) {
+    super(props);
+    this.state = { hasError: false, error: null };
+  }
+
+  static getDerivedStateFromError(error: Error): ErrorBoundaryState {
+    return { hasError: true, error };
+  }
+
+  componentDidCatch(error: Error, errorInfo: ErrorInfo) {
+    console.error('MirrorMatch Error:', error, errorInfo);
+  }
+
+  handleReset = () => {
+    this.setState({ hasError: false, error: null });
+    this.props.onReset();
+  };
+
+  render() {
+    if (this.state.hasError) {
+      return (
+        <div className="fatal-error-screen">
+          <div className="error-panel">
+            <div className="error-icon">💥</div>
+            <h1>Unexpected Error</h1>
+            <p>Something went wrong. Reload the page or start a new match.</p>
+            <div className="error-actions">
+              <button className="error-btn" onClick={() => window.location.reload()}>
+                Reload Page
+              </button>
+              <button className="error-btn secondary" onClick={this.handleReset}>
+                New Match
+              </button>
+            </div>
+          </div>
+        </div>
+      );
+    }
+
+    return this.props.children;
+  }
+}
 
 type AppMode = 'welcome' | 'playing' | 'results' | 'error';
 type PlayMode = 'local' | 'ai' | 'async';
 
-function App() {
+function AppContent() {
   // App State
   const [mode, setMode] = useState<AppMode>('welcome');
   const [playMode, setPlayMode] = useState<PlayMode>('local');
@@ -38,7 +104,7 @@ function App() {
   const [gameState, setGameState] = useState<GameState>(() => createInitialGameState(Date.now()));
   const [history, setHistory] = useState<TurnActions[]>([]);
 
-  // Turn State (for simultaneous play)
+  // Turn State
   const [pendingP1, setPendingP1] = useState<PlayerAction | null>(null);
   const [pendingP2, setPendingP2] = useState<PlayerAction | null>(null);
   const [aiThinking, setAiThinking] = useState(false);
@@ -48,6 +114,7 @@ function App() {
   const [asyncError, setAsyncError] = useState<string | null>(null);
   const [showShareHint, setShowShareHint] = useState(false);
   const [replayVerified, setReplayVerified] = useState(false);
+  const [replayTruncated, setReplayTruncated] = useState(false);
   const [fatalError, setFatalError] = useState<string | null>(null);
 
   // Check URL for async match on load
@@ -61,13 +128,6 @@ function App() {
   // Load async match from URL data with safety checks
   const loadAsyncMatch = useCallback((encodedMatch: EncodedMatch) => {
     try {
-      // Safety: Cap replay turns
-      if (encodedMatch.actions.length > MAX_REPLAY_TURNS) {
-        setFatalError('This match link is invalid or corrupted');
-        setMode('error');
-        return;
-      }
-
       // Validate seed
       if (typeof encodedMatch.seed !== 'number' || !isFinite(encodedMatch.seed)) {
         setFatalError('This match link is invalid or corrupted');
@@ -75,14 +135,21 @@ function App() {
         return;
       }
 
+      // Safety: Cap replay turns
+      let actions = encodedMatch.actions;
+      let truncated = false;
+      if (actions.length > MAX_REPLAY_TURNS) {
+        actions = actions.slice(0, MAX_REPLAY_TURNS);
+        truncated = true;
+      }
+
       // Recreate game state from seed and replay actions
       let state = createInitialGameState(encodedMatch.seed);
       
       // Replay all completed turns with validation
-      for (let i = 0; i < encodedMatch.actions.length; i++) {
-        const turnAction = encodedMatch.actions[i];
+      for (let i = 0; i < actions.length; i++) {
+        const turnAction = actions[i];
         
-        // Validate turn structure
         if (!turnAction.playerActions || turnAction.playerActions.length !== 2) {
           setFatalError('This match link is invalid or corrupted');
           setMode('error');
@@ -91,8 +158,7 @@ function App() {
         
         state = resolveTurn(state, turnAction);
         
-        // Safety: Check for unexpected game over during replay
-        if (state.gameOver && i < encodedMatch.actions.length - 1) {
+        if (state.gameOver && i < actions.length - 1) {
           setFatalError('This match link is invalid or corrupted');
           setMode('error');
           return;
@@ -103,10 +169,10 @@ function App() {
       setMyRole(encodedMatch.currentPlayer);
       setPlayMode('async');
       setGameState(state);
-      setHistory(encodedMatch.actions);
+      setHistory(actions);
       setReplayVerified(true);
+      setReplayTruncated(truncated);
       
-      // Set pending actions if any
       if (encodedMatch.pendingActions.player1) {
         setPendingP1(encodedMatch.pendingActions.player1);
       }
@@ -115,8 +181,6 @@ function App() {
       }
       
       setMode('playing');
-      
-      // Clear URL params
       window.history.replaceState({}, '', window.location.pathname);
     } catch (err) {
       console.error('Async match load error:', err);
@@ -137,6 +201,7 @@ function App() {
     setAsyncError(null);
     setShowShareHint(false);
     setReplayVerified(false);
+    setReplayTruncated(false);
     setFatalError(null);
     
     if (difficulty) {
@@ -145,7 +210,6 @@ function App() {
     
     if (newPlayMode === 'async') {
       setMyRole('player1');
-      // Show share hint after a short delay
       setTimeout(() => setShowShareHint(true), 1000);
     }
     
@@ -154,17 +218,13 @@ function App() {
 
   // Handle player action
   const handleAction = useCallback((player: 'player1' | 'player2', action: PlayerAction) => {
-    // Validate
     if (!isActionLegal(gameState, player, action)) {
-      console.warn('Illegal action attempted:', action);
       return;
     }
 
-    // Store pending action
     if (player === 'player1') {
       setPendingP1(action);
 
-      // If AI mode, trigger AI response
       if (playMode === 'ai') {
         setAiThinking(true);
         setTimeout(() => {
@@ -174,20 +234,17 @@ function App() {
         }, 600 + Math.random() * 400);
       }
       
-      // If async mode, generate share URL
       if (playMode === 'async') {
         generateShareURL(action, null);
       }
     } else {
       setPendingP2(action);
       
-      // If async mode, generate share URL
       if (playMode === 'async') {
         generateShareURL(pendingP1, action);
       }
     }
 
-    // If both pending (local mode), resolve
     if (playMode === 'local') {
       if (player === 'player1' && pendingP2) {
         resolveBothActions(action, pendingP2);
@@ -197,7 +254,7 @@ function App() {
     }
   }, [gameState, playMode, aiDifficulty, pendingP1, pendingP2]);
 
-  // Generate shareable URL for async mode
+  // Generate shareable URL
   const generateShareURL = useCallback((p1Action: PlayerAction | null, p2Action: PlayerAction | null) => {
     const pendingActions: Record<string, PlayerAction> = {};
     if (p1Action) pendingActions['player1'] = p1Action;
@@ -213,22 +270,19 @@ function App() {
 
     const url = createShareableURL(encoded);
     
-    // Copy to clipboard with fallback
     if (navigator.clipboard && navigator.clipboard.writeText) {
       navigator.clipboard.writeText(url).then(() => {
         setShowShareHint(true);
         setTimeout(() => setShowShareHint(false), 3000);
       }).catch(() => {
-        // Fallback: show URL in prompt
         prompt('Copy this link to share:', url);
       });
     } else {
-      // Fallback for older browsers
       prompt('Copy this link to share:', url);
     }
   }, [gameSeed, history, myRole]);
 
-  // Resolve turn with both actions
+  // Resolve turn
   const resolveBothActions = useCallback((p1Action: PlayerAction, p2Action: PlayerAction) => {
     const turnActions: TurnActions = {
       playerActions: [
@@ -243,14 +297,13 @@ function App() {
     setPendingP1(null);
     setPendingP2(null);
 
-    // Check game over
     if (newState.gameOver) {
       recordGame(newState);
       setTimeout(() => setMode('results'), 500);
     }
   }, [gameState]);
 
-  // Reset to welcome
+  // Reset
   const resetGame = useCallback(() => {
     setMode('welcome');
     const newSeed = Date.now();
@@ -262,10 +315,10 @@ function App() {
     setAsyncError(null);
     setShowShareHint(false);
     setReplayVerified(false);
+    setReplayTruncated(false);
     setFatalError(null);
   }, []);
 
-  // Play again with same settings
   const playAgain = useCallback(() => {
     startGame(playMode, aiDifficulty);
   }, [playMode, aiDifficulty, startGame]);
@@ -273,7 +326,7 @@ function App() {
   // Fatal error screen
   if (mode === 'error' && fatalError) {
     return (
-      <div className="app">
+      <>
         <div className="fatal-error-screen">
           <div className="error-panel">
             <div className="error-icon">⚠️</div>
@@ -285,14 +338,16 @@ function App() {
           </div>
         </div>
         <footer className="app-footer">
-          <span>MirrorMatch v{APP_VERSION} — Replay-Verified</span>
+          <span>MirrorMatch v{APP_VERSION}</span>
+          <span className="footer-sep">·</span>
+          <a href={GITHUB_URL} target="_blank" rel="noopener noreferrer">GitHub</a>
         </footer>
-      </div>
+      </>
     );
   }
 
   return (
-    <div className="app">
+    <>
       {mode === 'welcome' && (
         <WelcomeView onStart={startGame} />
       )}
@@ -328,6 +383,13 @@ function App() {
         </div>
       )}
 
+      {/* Replay Truncated Warning */}
+      {replayTruncated && mode === 'playing' && (
+        <div className="replay-truncated">
+          <span>⚠️ Replay truncated for safety</span>
+        </div>
+      )}
+
       {/* Async Error Toast */}
       {asyncError && (
         <div className="error-toast">
@@ -336,7 +398,7 @@ function App() {
         </div>
       )}
 
-      {/* Async Share Reminder */}
+      {/* Async Share Hint */}
       {showShareHint && playMode === 'async' && mode === 'playing' && (
         <div className="async-hint">
           <span>🔗 Share URL copied! Send to opponent.</span>
@@ -345,8 +407,30 @@ function App() {
 
       {/* Version Footer */}
       <footer className="app-footer">
-        <span>MirrorMatch v{APP_VERSION} — Replay-Verified</span>
+        <span>MirrorMatch v{APP_VERSION}</span>
+        <span className="footer-sep">·</span>
+        <span>Open-Source</span>
+        <span className="footer-sep">·</span>
+        <span>Deterministic</span>
+        <span className="footer-sep">·</span>
+        <span>No Server Storage</span>
+        <span className="footer-sep">·</span>
+        <a href={GITHUB_URL} target="_blank" rel="noopener noreferrer">GitHub</a>
       </footer>
+    </>
+  );
+}
+
+function App() {
+  const handleReset = () => {
+    window.location.href = window.location.pathname;
+  };
+
+  return (
+    <div className="app">
+      <ErrorBoundary onReset={handleReset}>
+        <AppContent />
+      </ErrorBoundary>
     </div>
   );
 }
