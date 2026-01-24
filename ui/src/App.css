@@ -1167,8 +1167,10 @@ body {
 
 .closure-header h2 {
   margin: 0 0 24px 0;
-  font-size: 1.8rem;
-  color: rgba(255, 255, 255, 0.95);
+  font-size: 2rem;
+  font-weight: 800;
+  color: rgba(255, 255, 255, 0.98);
+  text-shadow: 0 2px 8px rgba(0, 0, 0, 0.5);
 }
 
 .outcome-section {
@@ -1176,12 +1178,13 @@ body {
 }
 
 .outcome-label {
-  font-size: 2rem;
-  font-weight: 700;
-  padding: 12px 24px;
+  font-size: 2.5rem;
+  font-weight: 800;
+  padding: 16px 32px;
   border-radius: 12px;
   display: inline-block;
   margin-bottom: 16px;
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.3);
 }
 
 .outcome-label.win {
@@ -1209,8 +1212,44 @@ body {
 }
 
 .final-stats {
-  color: rgba(255, 255, 255, 0.6);
-  font-size: 0.95rem;
+  color: rgba(255, 255, 255, 0.5);
+  font-size: 0.9rem;
+  margin-top: 8px;
+}
+
+/* Day 36: Performance Badges */
+.performance-badges {
+  display: flex;
+  gap: 12px;
+  justify-content: center;
+  flex-wrap: wrap;
+  margin: 20px 0 12px 0;
+}
+
+.badge {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 16px;
+  background: rgba(255, 255, 255, 0.08);
+  border: 1px solid rgba(255, 255, 255, 0.15);
+  border-radius: 20px;
+  font-size: 0.9rem;
+  color: rgba(255, 255, 255, 0.85);
+  transition: all 0.2s ease;
+}
+
+.badge:hover {
+  background: rgba(255, 255, 255, 0.12);
+  transform: translateY(-2px);
+}
+
+.badge-icon {
+  font-size: 1.2rem;
+}
+
+.badge-label {
+  font-weight: 500;
 }
 
 .closure-actions {

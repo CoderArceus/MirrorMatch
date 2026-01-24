@@ -735,6 +735,21 @@ function App() {
   
   // Day 35: Share match functionality
   const [shareToast, setShareToast] = useState<boolean>(false);
+  
+  // Day 36: Post-game memory lock - freeze analytics on game end
+  interface GameAnalytics {
+    playerMetrics: {
+      energyRemaining: number;
+      winThreats: number;
+      lanesWon: number;
+    };
+    opponentMetrics: {
+      winThreats: number;
+      lanesWon: number;
+    };
+    contestableLanes: number;
+  }
+  const [frozenAnalytics, setFrozenAnalytics] = useState<GameAnalytics | null>(null);
 
   const player1 = gameState.players[0];
   const player2 = gameState.players[1];
@@ -823,6 +838,106 @@ function App() {
     }
   };
 
+  // Day 36: Compute game analytics
+  const computeGameAnalytics = (state: GameState, playerId: string): GameAnalytics => {
+    const player = state.players.find(p => p.id === playerId)!;
+    const opponent = state.players.find(p => p.id !== playerId)!;
+    
+    let playerLanesWon = 0;
+    let opponentLanesWon = 0;
+    let contestableLanes = 0;
+    
+    for (let i = 0; i < 3; i++) {
+      const pLane = player.lanes[i];
+      const oLane = opponent.lanes[i];
+      
+      if (pLane.busted && oLane.busted) {
+        // Draw
+      } else if (pLane.busted) {
+        opponentLanesWon++;
+      } else if (oLane.busted) {
+        playerLanesWon++;
+      } else if (pLane.total > oLane.total) {
+        playerLanesWon++;
+      } else if (oLane.total > pLane.total) {
+        opponentLanesWon++;
+      } else {
+        contestableLanes++;
+      }
+    }
+    
+    // Win threats: lanes within 1-2 cards of winning
+    const playerWinThreats = player.lanes.filter((lane, i) => {
+      if (lane.busted || lane.locked) return false;
+      const oppLane = opponent.lanes[i];
+      return !oppLane.busted && lane.total >= oppLane.total - 2;
+    }).length;
+    
+    const opponentWinThreats = opponent.lanes.filter((lane, i) => {
+      if (lane.busted || lane.locked) return false;
+      const pLane = player.lanes[i];
+      return !pLane.busted && lane.total >= pLane.total - 2;
+    }).length;
+    
+    return {
+      playerMetrics: {
+        energyRemaining: player.energy,
+        winThreats: playerWinThreats,
+        lanesWon: playerLanesWon,
+      },
+      opponentMetrics: {
+        winThreats: opponentWinThreats,
+        lanesWon: opponentLanesWon,
+      },
+      contestableLanes,
+    };
+  };
+
+  // Day 36: Generate performance badges from analytics
+  const getPerformanceBadges = (analytics: GameAnalytics) => {
+    const badges: Array<{ icon: string; label: string }> = [];
+
+    // Efficient Energy Use
+    if (analytics.playerMetrics.energyRemaining <= 1) {
+      badges.push({ icon: '🧠', label: 'Efficient Energy Use' });
+    }
+
+    // Perfect Pressure
+    if (analytics.playerMetrics.winThreats >= 2) {
+      badges.push({ icon: '🎯', label: 'Perfect Pressure' });
+    }
+
+    // High-Stakes Finish
+    if (analytics.contestableLanes === 0) {
+      badges.push({ icon: '🔥', label: 'High-Stakes Finish' });
+    }
+
+    // Balanced Victory
+    if (gameState.winner === myPlayerRole && analytics.playerMetrics.lanesWon === 2 && analytics.opponentMetrics.lanesWon === 1) {
+      badges.push({ icon: '⚖️', label: 'Balanced Victory' });
+    }
+
+    // Elite Draw
+    if (gameState.winner === null && analytics.playerMetrics.winThreats >= 1 && analytics.opponentMetrics.winThreats >= 1) {
+      badges.push({ icon: '♟️', label: 'Elite Draw' });
+    }
+
+    return badges.slice(0, 3); // Max 3 badges
+  };
+
+  // Day 36: Draw reframing based on pressure
+  const getDrawExplanation = (analytics: GameAnalytics) => {
+    const totalPressure = analytics.playerMetrics.winThreats + analytics.opponentMetrics.winThreats;
+    
+    if (totalPressure >= 3) {
+      return 'Elite-level draw — neither player yielded ground';
+    } else if (totalPressure >= 2) {
+      return 'Perfectly balanced confrontation';
+    } else {
+      return 'Both players won an equal number of lanes';
+    }
+  };
+
   // Record game stats and replay when it ends (only once)
   useEffect(() => {
     if (gameState.gameOver && !gameRecorded) {
@@ -839,6 +954,12 @@ function App() {
         timestamp: Date.now(),
       };
       saveReplay(replay);
+
+      // Day 36: Freeze analytics for post-game memory lock
+      if (asyncMode && !frozenAnalytics) {
+        const analytics = computeGameAnalytics(gameState, myPlayerRole);
+        setFrozenAnalytics(analytics);
+      }
 
       setGameRecorded(true);
 
@@ -1204,10 +1325,29 @@ function App() {
                 <div className="outcome-explanation">
                   {gameState.winner === myPlayerRole
                     ? 'You won more lanes than your opponent'
+                    : gameState.winner === null && frozenAnalytics
+                    ? getDrawExplanation(frozenAnalytics)
                     : gameState.winner === null
                     ? 'Both players won an equal number of lanes'
                     : 'Your opponent won more lanes'}
                 </div>
+                
+                {/* Day 36: Performance Badges */}
+                {frozenAnalytics && (() => {
+                  const badges = getPerformanceBadges(frozenAnalytics);
+                  if (badges.length === 0) return null;
+                  return (
+                    <div className="performance-badges">
+                      {badges.map((badge, i) => (
+                        <div key={i} className="badge">
+                          <span className="badge-icon">{badge.icon}</span>
+                          <span className="badge-label">{badge.label}</span>
+                        </div>
+                      ))}
+                    </div>
+                  );
+                })()}
+                
                 <div className="final-stats">
                   Final turn: {gameState.turnNumber - 1}
                 </div>
