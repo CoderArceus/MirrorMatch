@@ -711,6 +711,9 @@ function App() {
     // Opening the link means you are that player
     return urlMatch.currentPlayer;
   });
+  
+  // Day 30: Match restoration indicator
+  const [matchRestored, setMatchRestored] = useState<boolean>(false);
 
   const player1 = gameState.players[0];
   const player2 = gameState.players[1];
@@ -722,6 +725,13 @@ function App() {
   useEffect(() => {
     if (urlMatch && urlMatch.version !== 1) {
       setUrlError('Invalid match version. Please request a new link.');
+    }
+    
+    // Day 30: Show match restored indicator on load
+    if (urlMatch && actionHistory.length > 0) {
+      setMatchRestored(true);
+      // Hide after 3 seconds
+      setTimeout(() => setMatchRestored(false), 3000);
     }
   }, [urlMatch]);
 
@@ -1087,6 +1097,52 @@ function App() {
   return (
     <div className="app">
       <div className="game-container">
+        {/* Day 30: Match Entry Clarity Banner */}
+        {asyncMode && !gameState.gameOver && (
+          <div className={`match-entry-banner ${isMyTurn ? 'your-turn' : 'waiting'} ${pendingActions[myPlayerRole] ? 'action-submitted' : ''}`}>
+            {isMyTurn ? (
+              pendingActions[myPlayerRole] ? (
+                <div className="banner-content">
+                  <span className="banner-icon">✓</span>
+                  <span className="banner-text">Action Submitted — Waiting for Opponent</span>
+                </div>
+              ) : (
+                <div className="banner-content">
+                  <span className="banner-icon">▶</span>
+                  <span className="banner-text">Your Turn</span>
+                </div>
+              )
+            ) : (
+              <div className="banner-content">
+                <span className="banner-icon">⏳</span>
+                <span className="banner-text">Waiting for Opponent</span>
+              </div>
+            )}
+          </div>
+        )}
+
+        {/* Day 30: Match Restored Indicator */}
+        {asyncMode && matchRestored && (
+          <div className="match-restored-indicator">
+            <span className="restored-icon">✓</span>
+            <span className="restored-text">Match restored from replay</span>
+          </div>
+        )}
+
+        {/* Day 30: URL Error State */}
+        {asyncMode && urlError && (
+          <div className="url-error-panel">
+            <div className="error-header">⚠️ Invalid Match Link</div>
+            <p className="error-message">{urlError}</p>
+            <button 
+              onClick={() => window.location.href = window.location.origin}
+              className="start-new-btn"
+            >
+              Start New Match
+            </button>
+          </div>
+        )}
+
         {/* AREA 1: Turn Number */}
         <div className="turn-header">
           <h1>MirrorMatch: Strategic 21</h1>
@@ -1423,8 +1479,11 @@ function App() {
                 
                 const summary = generateTurnSummary(turnActions, turnIndex + 1, stateBeforeTurn, stateAfterTurn);
                 
+                // Day 30: Highlight latest turn
+                const isLatestTurn = turnIndex === actionHistory.length - 1;
+                
                 return (
-                  <div key={turnIndex} className={`history-turn ${summary.isAuction ? 'auction-turn' : ''}`}>
+                  <div key={turnIndex} className={`history-turn ${summary.isAuction ? 'auction-turn' : ''} ${isLatestTurn ? 'latest-turn' : ''}`}>
                     <div className="history-turn-header">
                       <div className="history-turn-number">Turn {turnIndex + 1}</div>
                       {summary.isAuction && <span className="auction-label">🎯 Auction</span>}

@@ -1131,6 +1131,163 @@ body {
   border: 1px solid rgba(158, 158, 158, 0.3);
 }
 
+/* Day 30: Async Match Entry & Recovery UX */
+
+/* Match Entry Clarity Banner */
+.match-entry-banner {
+  position: sticky;
+  top: 0;
+  z-index: 100;
+  padding: 16px 24px;
+  text-align: center;
+  font-size: 1.1rem;
+  font-weight: 600;
+  border-bottom: 2px solid;
+  animation: slideDown 0.3s ease-out;
+}
+
+.match-entry-banner.your-turn {
+  background: rgba(76, 175, 80, 0.15);
+  border-color: #4caf50;
+  color: #4caf50;
+}
+
+.match-entry-banner.waiting {
+  background: rgba(255, 152, 0, 0.15);
+  border-color: #ff9800;
+  color: #ff9800;
+}
+
+.match-entry-banner.action-submitted {
+  background: rgba(33, 150, 243, 0.15);
+  border-color: #2196f3;
+  color: #2196f3;
+}
+
+.banner-content {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 12px;
+}
+
+.banner-icon {
+  font-size: 1.3rem;
+}
+
+.banner-text {
+  letter-spacing: 0.5px;
+}
+
+@keyframes slideDown {
+  from {
+    opacity: 0;
+    transform: translateY(-20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/* Match Restored Indicator */
+.match-restored-indicator {
+  position: fixed;
+  top: 80px;
+  right: 20px;
+  z-index: 200;
+  background: rgba(76, 175, 80, 0.95);
+  color: white;
+  padding: 12px 20px;
+  border-radius: 8px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  font-weight: 500;
+  animation: fadeInOut 3s ease-in-out;
+}
+
+.restored-icon {
+  font-size: 1.2rem;
+}
+
+@keyframes fadeInOut {
+  0% {
+    opacity: 0;
+    transform: translateX(20px);
+  }
+  10% {
+    opacity: 1;
+    transform: translateX(0);
+  }
+  90% {
+    opacity: 1;
+    transform: translateX(0);
+  }
+  100% {
+    opacity: 0;
+    transform: translateX(20px);
+  }
+}
+
+/* URL Error Panel */
+.url-error-panel {
+  background: rgba(244, 67, 54, 0.15);
+  border: 2px solid #f44336;
+  border-radius: 12px;
+  padding: 24px;
+  margin: 20px;
+  text-align: center;
+}
+
+.error-header {
+  font-size: 1.3rem;
+  font-weight: 700;
+  color: #f44336;
+  margin-bottom: 12px;
+}
+
+.error-message {
+  color: rgba(255, 255, 255, 0.9);
+  margin-bottom: 20px;
+  font-size: 1rem;
+}
+
+.start-new-btn {
+  padding: 12px 24px;
+  background: #4caf50;
+  color: white;
+  border: none;
+  border-radius: 8px;
+  font-size: 1rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.start-new-btn:hover {
+  background: #45a049;
+  transform: scale(1.05);
+}
+
+/* Latest Turn Highlight */
+.history-turn.latest-turn {
+  background: rgba(76, 175, 80, 0.12);
+  border-left: 4px solid #4caf50;
+  box-shadow: 0 0 16px rgba(76, 175, 80, 0.3);
+  animation: pulseGlow 2s ease-in-out infinite;
+}
+
+@keyframes pulseGlow {
+  0%, 100% {
+    box-shadow: 0 0 16px rgba(76, 175, 80, 0.3);
+  }
+  50% {
+    box-shadow: 0 0 24px rgba(76, 175, 80, 0.5);
+  }
+}
+
 /* Dark Auction Banner */
 .auction-banner {
   background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
