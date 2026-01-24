@@ -1,0 +1,223 @@
+/* ActionControls.css */
+.controls-section {
+    background: #333;
+    border-radius: 6px;
+    padding: 10px;
+    /* Reduced from 20px */
+}
+
+.active-player-toggle {
+    text-align: center;
+    margin-bottom: 8px;
+    /* Reduced from 20px */
+    padding-bottom: 8px;
+    /* Reduced from 16px */
+    border-bottom: 1px solid #444;
+    font-size: 14px;
+    /* Reduced from 18px */
+}
+
+.toggle-btn {
+    margin-left: 12px;
+    padding: 4px 12px;
+    /* Compact */
+    background: #4a9eff;
+    border: none;
+    border-radius: 4px;
+    color: white;
+    font-weight: bold;
+    cursor: pointer;
+    font-size: 0.8rem;
+}
+
+.actions {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 10px;
+    /* Reduced from 20px */
+}
+
+.action-group h4 {
+    font-size: 11px;
+    /* Reduced */
+    margin-bottom: 6px;
+    color: #aaa;
+    text-align: center;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+.lane-buttons {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+    /* Reduced from 8px */
+}
+
+.action-btn {
+    padding: 8px 12px;
+    /* Reduced from 12px 16px */
+    background: #4a9eff;
+    border: none;
+    border-radius: 4px;
+    color: white;
+    font-weight: bold;
+    font-size: 12px;
+    /* Reduced from 14px */
+    cursor: pointer;
+    transition: all 0.2s;
+    white-space: nowrap;
+    /* Prevent wrap */
+}
+
+.action-btn:hover:not(:disabled) {
+    background: #3a8eef;
+    transform: translateY(-1px);
+}
+
+.action-btn:disabled {
+    background: #444;
+    /* Darker disabled state */
+    color: #777;
+    cursor: not-allowed;
+    opacity: 0.6;
+}
+
+.action-btn.burn {
+    background: #ff6b35;
+}
+
+.action-btn.burn:hover:not(:disabled) {
+    background: #ff5525;
+}
+
+.action-btn.stand {
+    background: #ffaa00;
+}
+
+.action-btn.stand:hover:not(:disabled) {
+    background: #ee9900;
+}
+
+/* Blind Hit Controls */
+.blind-hit-warning {
+    font-size: 0.75rem;
+    color: #ff6b35;
+    font-style: italic;
+    margin: 4px 0;
+    padding: 4px;
+    background: rgba(255, 107, 53, 0.1);
+    border-left: 2px solid #ff6b35;
+    border-radius: 2px;
+}
+
+.action-btn.blind-hit {
+    background: #ff6b35;
+    color: white;
+}
+
+@media (max-width: 768px) {
+    .actions {
+        grid-template-columns: 1fr;
+    }
+}
+
+/* Turn & State Clarity */
+.async-state-indicator {
+    background: rgba(30, 30, 30, 0.95);
+    border: 2px solid rgba(255, 255, 255, 0.1);
+    border-radius: 8px;
+    padding: 1rem;
+    margin-bottom: 1rem;
+}
+
+.turn-status {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    font-size: 1.1rem;
+    font-weight: bold;
+}
+
+.turn-status.your-turn {
+    color: #2e7d32;
+}
+
+.turn-status.opponent-turn {
+    color: #f57c00;
+}
+
+.status-icon {
+    font-size: 1.5rem;
+}
+
+.status-text {
+    font-size: 1.2rem;
+}
+
+.action-submitted {
+    margin-left: 0.5rem;
+    font-size: 0.9rem;
+    color: #666;
+    font-weight: normal;
+}
+
+.waiting-hint {
+    margin-left: 0.5rem;
+    font-size: 0.9rem;
+    color: #666;
+    font-weight: normal;
+}
+
+/* Opponent Waiting Animation */
+.opponent-waiting {
+    display: inline-block;
+}
+
+.animated-dots {
+    display: inline-block;
+    animation: blink 1.5s infinite;
+}
+
+@keyframes blink {
+
+    0%,
+    20% {
+        opacity: 0;
+    }
+
+    40% {
+        opacity: 0.5;
+    }
+
+    60%,
+    100% {
+        opacity: 1;
+    }
+}
+
+/* Waiting for Opponent Section */
+.waiting-for-opponent {
+    text-align: center;
+    padding: 40px 20px;
+    background: #2a2a2a;
+    border-radius: 6px;
+}
+
+.waiting-for-opponent h3 {
+    font-size: 24px;
+    color: #ffaa00;
+    margin-bottom: 12px;
+}
+
+.waiting-for-opponent p {
+    font-size: 16px;
+    color: #e0e0e0;
+    margin-bottom: 8px;
+}
+
+.waiting-for-opponent .hint {
+    font-size: 14px;
+    color: #aaa;
+    font-style: italic;
+}

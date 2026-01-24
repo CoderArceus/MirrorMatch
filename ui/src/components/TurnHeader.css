@@ -1,0 +1,149 @@
+/* TurnHeader.css */
+.turn-header {
+    text-align: center;
+    margin-bottom: 24px;
+    padding-bottom: 16px;
+    border-bottom: 2px solid #444;
+}
+
+.turn-header h1 {
+    font-size: 28px;
+    margin-bottom: 8px;
+    color: #4a9eff;
+}
+
+.turn-info {
+    font-size: 18px;
+    font-weight: bold;
+    margin-bottom: 12px;
+}
+
+.ai-thinking {
+    color: #ffaa00;
+    animation: pulse 1s infinite;
+}
+
+/* AI Mode Controls */
+.game-mode-controls {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    gap: 16px;
+    margin-top: 12px;
+}
+
+.mode-toggle {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    cursor: pointer;
+    font-size: 16px;
+    color: #e0e0e0;
+}
+
+.mode-toggle input[type="checkbox"] {
+    cursor: pointer;
+    width: 18px;
+    height: 18px;
+}
+
+.mode-toggle input[type="checkbox"]:disabled {
+    cursor: not-allowed;
+    opacity: 0.5;
+}
+
+.difficulty-select {
+    padding: 6px 12px;
+    background: #444;
+    border: 2px solid #4a9eff;
+    border-radius: 4px;
+    color: #e0e0e0;
+    font-size: 14px;
+    font-weight: bold;
+    cursor: pointer;
+    transition: all 0.2s;
+}
+
+.difficulty-select:hover:not(:disabled) {
+    background: #4a9eff;
+    color: #1a1a1a;
+}
+
+.difficulty-select:disabled {
+    cursor: not-allowed;
+    opacity: 0.5;
+    border-color: #666;
+}
+
+.create-challenge-btn {
+    padding: 8px 16px;
+    background: #76ff76;
+    border: 2px solid #66ee66;
+    border-radius: 4px;
+    color: #1a1a1a;
+    font-size: 14px;
+    font-weight: bold;
+    cursor: pointer;
+    transition: all 0.2s;
+}
+
+.create-challenge-btn:hover {
+    background: #66ee66;
+    transform: translateY(-1px);
+}
+
+.game-over {
+    color: #ffaa00;
+    animation: pulse 1s infinite;
+}
+
+@keyframes pulse {
+
+    0%,
+    100% {
+        opacity: 1;
+    }
+
+    50% {
+        opacity: 0.7;
+    }
+}
+
+/* Dark Auction Banner */
+.auction-banner {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    background-size: 200% 200%;
+    animation: gradientFlow 5s ease infinite;
+    color: white;
+    padding: 1.5rem;
+    margin: 1rem 0;
+    border-radius: 8px;
+    text-align: center;
+    box-shadow: 0 4px 15px rgba(118, 75, 162, 0.4);
+}
+
+@keyframes gradientFlow {
+    0% {
+        background-position: 0% 50%;
+    }
+
+    50% {
+        background-position: 100% 50%;
+    }
+
+    100% {
+        background-position: 0% 50%;
+    }
+}
+
+.auction-banner h2 {
+    margin: 0 0 0.5rem 0;
+    font-size: 1.8rem;
+    text-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+}
+
+.auction-banner p {
+    margin: 0;
+    font-size: 1rem;
+    opacity: 0.95;
+}

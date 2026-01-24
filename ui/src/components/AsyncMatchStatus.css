@@ -1,0 +1,307 @@
+/* Async Match Status Container */
+.async-match-status {
+  position: relative;
+  z-index: 50;
+}
+
+/* Status Banners - Sticky at top */
+.status-banner {
+  position: sticky;
+  top: 0;
+  padding: 16px 24px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 12px;
+  font-size: 1rem;
+  font-weight: 500;
+  border-radius: 0 0 12px 12px;
+  animation: slideDown 0.3s ease-out;
+  backdrop-filter: blur(10px);
+}
+
+.restoring-banner {
+  background: rgba(33, 150, 243, 0.15);
+  border-bottom: 2px solid #2196f3;
+  color: #2196f3;
+}
+
+/* Status Toasts - Floating */
+.status-toast {
+  position: fixed;
+  top: 20px;
+  right: 20px;
+  z-index: 200;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 14px 20px;
+  border-radius: 10px;
+  font-weight: 500;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.4);
+  animation: slideInRight 0.3s ease-out, fadeOut 0.5s 2.5s ease-out forwards;
+  backdrop-filter: blur(10px);
+}
+
+.match-restored-toast {
+  background: rgba(76, 175, 80, 0.95);
+  border: 1px solid #4caf50;
+  color: white;
+}
+
+.success-toast {
+  background: rgba(76, 175, 80, 0.95);
+  border: 1px solid #4caf50;
+  color: white;
+}
+
+.error-toast {
+  background: rgba(244, 67, 54, 0.95);
+  border: 1px solid #f44336;
+  color: white;
+}
+
+.toast-icon {
+  font-size: 1.3rem;
+}
+
+.toast-btn {
+  padding: 6px 14px;
+  background: rgba(255, 255, 255, 0.2);
+  border: 1px solid rgba(255, 255, 255, 0.3);
+  border-radius: 6px;
+  color: white;
+  font-size: 0.9rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.toast-btn:hover {
+  background: rgba(255, 255, 255, 0.3);
+  transform: scale(1.05);
+}
+
+/* Status Panels - Centered overlays */
+.status-panel {
+  position: fixed;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  z-index: 300;
+  max-width: 500px;
+  width: 90%;
+  background: rgba(20, 20, 25, 0.98);
+  border-radius: 16px;
+  padding: 32px;
+  text-align: center;
+  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.6);
+  border: 2px solid;
+  animation: popIn 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+}
+
+.error-panel {
+  border-color: #f44336;
+}
+
+.warning-panel {
+  border-color: #ff9800;
+}
+
+.panel-icon {
+  font-size: 3rem;
+  margin-bottom: 16px;
+}
+
+.panel-content h3 {
+  font-size: 1.5rem;
+  margin-bottom: 12px;
+  color: rgba(255, 255, 255, 0.95);
+}
+
+.panel-content p {
+  color: rgba(255, 255, 255, 0.7);
+  margin-bottom: 24px;
+  line-height: 1.6;
+}
+
+.panel-btn {
+  padding: 12px 28px;
+  border: none;
+  border-radius: 8px;
+  font-size: 1rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.panel-btn.primary {
+  background: #4caf50;
+  color: white;
+}
+
+.panel-btn.warning {
+  background: #ff9800;
+  color: white;
+}
+
+.panel-btn.error {
+  background: #f44336;
+  color: white;
+}
+
+.panel-btn:hover {
+  transform: scale(1.05);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+}
+
+/* Match Entry Banner */
+.match-entry-banner {
+  padding: 14px 24px;
+  text-align: center;
+  font-size: 1rem;
+  font-weight: 600;
+  border-radius: 12px;
+  margin: 12px 0;
+  border: 2px solid;
+  animation: slideDown 0.3s ease-out;
+  backdrop-filter: blur(10px);
+}
+
+.match-entry-banner.your-turn {
+  background: rgba(76, 175, 80, 0.12);
+  border-color: #4caf50;
+  color: #4caf50;
+}
+
+.match-entry-banner.waiting {
+  background: rgba(255, 152, 0, 0.12);
+  border-color: #ff9800;
+  color: #ff9800;
+}
+
+.match-entry-banner.action-submitted {
+  background: rgba(33, 150, 243, 0.12);
+  border-color: #2196f3;
+  color: #2196f3;
+}
+
+.banner-content {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 12px;
+}
+
+.banner-icon {
+  font-size: 1.2rem;
+}
+
+.banner-icon.spin {
+  animation: spin 2s linear infinite;
+}
+
+/* Auction Banner */
+.auction-banner {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  padding: 16px 24px;
+  margin: 12px 0;
+  background: rgba(156, 39, 176, 0.12);
+  border: 2px solid rgba(156, 39, 176, 0.4);
+  border-radius: 12px;
+  backdrop-filter: blur(10px);
+}
+
+.auction-banner .banner-icon {
+  font-size: 2rem;
+}
+
+.banner-message {
+  flex: 1;
+  text-align: left;
+}
+
+.banner-message strong {
+  display: block;
+  font-size: 1.1rem;
+  color: rgba(255, 255, 255, 0.95);
+  margin-bottom: 4px;
+}
+
+.banner-message p {
+  margin: 0;
+  color: rgba(255, 255, 255, 0.6);
+  font-size: 0.9rem;
+  font-weight: 400;
+}
+
+/* Animations */
+@keyframes slideDown {
+  from {
+    opacity: 0;
+    transform: translateY(-20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes slideInRight {
+  from {
+    opacity: 0;
+    transform: translateX(100px);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(0);
+  }
+}
+
+@keyframes fadeOut {
+  to {
+    opacity: 0;
+    transform: translateX(100px);
+  }
+}
+
+@keyframes popIn {
+  0% {
+    opacity: 0;
+    transform: translate(-50%, -50%) scale(0.8);
+  }
+  100% {
+    opacity: 1;
+    transform: translate(-50%, -50%) scale(1);
+  }
+}
+
+@keyframes spin {
+  from {
+    transform: rotate(0deg);
+  }
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+.animated-dots {
+  display: inline-block;
+  animation: blink 1.5s infinite;
+}
+
+@keyframes blink {
+  0%,
+  20% {
+    opacity: 0;
+  }
+  40% {
+    opacity: 0.5;
+  }
+  60%,
+  100% {
+    opacity: 1;
+  }
+}

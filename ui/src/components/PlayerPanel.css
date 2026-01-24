@@ -1,0 +1,109 @@
+/* PlayerPanel.css */
+.player-panel {
+    background: #333;
+    border-radius: 6px;
+    padding: 12px;
+    /* Reduced from 16px */
+    border: 2px solid transparent;
+    /* Reduced from 3px */
+    height: 100%;
+    /* Ensure it fills container */
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+    /* CRITICAL: Prevent panel from growing beyond parent */
+    min-height: 0;
+    /* CRITICAL: Allow flex child to shrink below content size */
+}
+
+.player-panel.active {
+    border-color: #4a9eff;
+    box-shadow: 0 0 10px rgba(74, 158, 255, 0.4);
+}
+
+.player-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 8px;
+    /* Reduced from 12px */
+    flex-shrink: 0;
+}
+
+.player-header h2 {
+    font-size: 16px;
+    /* Reduced from 20px */
+    color: #4a9eff;
+    margin: 0;
+}
+
+.energy {
+    font-size: 14px;
+    /* Reduced from 16px */
+    font-weight: bold;
+    color: #ffdd57;
+}
+
+.lanes {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 8px;
+    /* Reduced from 12px */
+    flex-grow: 1;
+    /* Allow lanes to expand */
+    align-items: stretch;
+    /* Cards fill height */
+    overflow-y: auto;
+    /* CRITICAL: Scroll if cards overflow */
+    min-height: 0;
+    /* Allow shrinking */
+    padding-bottom: 4px;
+    /* Space for scrollbar */
+}
+
+.lanes::-webkit-scrollbar {
+    width: 4px;
+}
+
+.lanes::-webkit-scrollbar-thumb {
+    background: #555;
+    border-radius: 2px;
+}
+
+.lanes::-webkit-scrollbar-track {
+    background: rgba(0, 0, 0, 0.1);
+}
+
+.pending-action {
+    margin-top: 8px;
+    /* Compact margin */
+    padding: 6px;
+    /* Compact padding */
+    background: #2e5c2e;
+    border-radius: 4px;
+    text-align: center;
+    font-weight: bold;
+    color: #76ff76;
+    font-size: 0.8rem;
+    flex-shrink: 0;
+    /* Never shrink this status */
+}
+
+/* Overheat Indicator */
+.overheat {
+    color: #ff6b35;
+    font-weight: bold;
+    font-size: 0.9rem;
+    margin-top: 0.25rem;
+}
+
+.overheat-badge {
+    background: rgba(255, 87, 34, 0.15);
+    color: #ff5722;
+    border: 1px solid rgba(255, 87, 34, 0.3);
+    padding: 2px 8px;
+    border-radius: 4px;
+    font-size: 0.85rem;
+    display: inline-block;
+    margin-left: 8px;
+}
