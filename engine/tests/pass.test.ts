@@ -1,5 +1,5 @@
 /**
- * Seque: Strategic 21 - Pass Action Tests
+ * Seque - Pass Action Tests
  * Tests for the Pass action which prevents engine soft-locks
  */
 

@@ -1,4 +1,4 @@
-# 🎮 Seque: Strategic 21
+# 🎮 Seque
 
 A tactical card battler where you and your opponent share the same deck. Manage energy, control lanes, and outsmart your mirror image.
 

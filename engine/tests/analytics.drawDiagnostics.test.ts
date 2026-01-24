@@ -1,5 +1,5 @@
 /**
- * Seque: Strategic 21 - Draw Diagnostics Tests
+ * Seque - Draw Diagnostics Tests
  * 
  * DAY 18 TASK 2.2: Tests for analyzeDrawDiagnostics aggregation
  * 

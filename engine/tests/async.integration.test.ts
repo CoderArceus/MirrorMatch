@@ -1,5 +1,5 @@
 /**
- * Seque: Strategic 21 - Async PvP Integration Tests
+ * Seque - Async PvP Integration Tests
  * 
  * CRITICAL: These tests verify integration constraints from the Day 17 prompt:
  * 1. Out-of-turn actions are rejected

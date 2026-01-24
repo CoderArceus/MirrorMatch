@@ -1,5 +1,5 @@
 /**
- * Seque: Strategic 21 - Async PvP System
+ * Seque - Async PvP System
  * Server-lite async multiplayer without shared URLs or websockets
  * 
  * DESIGN PRINCIPLES:

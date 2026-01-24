@@ -1,5 +1,5 @@
 /**
- * Seque: Strategic 21 - Async PvP Tests
+ * Seque - Async PvP Tests
  * Test async match creation, action submission, and turn resolution
  */
 

@@ -37,7 +37,6 @@ export const WelcomeView: React.FC<WelcomeViewProps> = ({ onStart }) => {
         <header className="welcome-header">
           <div className="logo-icon">🎴</div>
           <h1 className="game-title">Seque</h1>
-          <p className="game-subtitle">Strategic 21</p>
           <p className="game-tagline">
             A tactical card battler where you and your opponent share the same deck.
             Manage energy, control lanes, and outsmart your mirror image.

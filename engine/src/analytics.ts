@@ -1,5 +1,5 @@
 /**
- * Seque: Strategic 21 - Analytics Module
+ * Seque - Analytics Module
  * Pure functions for analyzing game outcomes, explaining results, and detecting achievements.
  */
 

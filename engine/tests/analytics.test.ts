@@ -1,5 +1,5 @@
 /**
- * Seque: Strategic 21 - Analytics Tests
+ * Seque - Analytics Tests
  * Tests for draw classification, decisiveness metrics, and balance analysis
  * 
  * DAY 18: Draw reason classification for balance tuning

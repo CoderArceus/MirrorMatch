@@ -1,5 +1,5 @@
 /**
- * Seque: Strategic 21 - Turn Resolution
+ * Seque - Turn Resolution
  * Pure, deterministic turn-by-turn state transition
  * 
  * CRITICAL: This function assumes actions are already validated.

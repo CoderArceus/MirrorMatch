@@ -1,5 +1,5 @@
 /**
- * Seque: Strategic 21 - Replay Runner
+ * Seque - Replay Runner
  * Pure replay system for deterministic game reproduction
  * 
  * CRITICAL: This module assumes replay data is valid (produced by server).
