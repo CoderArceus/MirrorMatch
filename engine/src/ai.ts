@@ -1,5 +1,5 @@
 /**
- * MirrorMatch AI - Engine-Driven Action Selection
+ * Seque AI - Engine-Driven Action Selection
  * 
  * CRITICAL RULES:
  * - AI MUST use getLegalActions() as source of truth

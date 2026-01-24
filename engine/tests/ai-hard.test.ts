@@ -1,5 +1,5 @@
 /**
- * MirrorMatch Hard AI Tests - Minimax-Lite Validation
+ * Seque Hard AI Tests - Minimax-Lite Validation
  * 
  * Tests verify that Hard AI:
  * - Beats Easy AI consistently

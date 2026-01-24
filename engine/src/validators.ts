@@ -1,5 +1,5 @@
 /**
- * MirrorMatch: Strategic 21 - Action Validators
+ * Seque: Strategic 21 - Action Validators
  * Pure legality checks - NO resolution logic, NO side effects, NO mutation
  * 
  * This module answers ONLY: "Is this action allowed to be attempted?"

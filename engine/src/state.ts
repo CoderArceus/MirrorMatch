@@ -1,5 +1,5 @@
 /**
- * MirrorMatch: Strategic 21 - Game State Management
+ * Seque: Strategic 21 - Game State Management
  * Pure functions for creating and managing game state
  * 
  * CRITICAL: LaneState.total is a CACHED value derived from LaneState.cards.

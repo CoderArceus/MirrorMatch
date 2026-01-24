@@ -1,5 +1,5 @@
 /**
- * MirrorMatch UI - Redesigned from scratch
+ * Seque UI - Redesigned from scratch
  * Proper simultaneous turn logic - both players act on the same card
  */
 

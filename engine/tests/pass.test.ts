@@ -1,5 +1,5 @@
 /**
- * MirrorMatch: Strategic 21 - Pass Action Tests
+ * Seque: Strategic 21 - Pass Action Tests
  * Tests for the Pass action which prevents engine soft-locks
  */
 

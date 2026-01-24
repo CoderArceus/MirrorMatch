@@ -1,5 +1,5 @@
 /**
- * MirrorMatch: Strategic 21 - Turn Resolution
+ * Seque: Strategic 21 - Turn Resolution
  * Pure, deterministic turn-by-turn state transition
  * 
  * CRITICAL: This function assumes actions are already validated.

@@ -1,13 +1,13 @@
-# 🎮 MirrorMatch: Strategic 21
+# 🎮 Seque: Strategic 21
 
 A tactical card battler where you and your opponent share the same deck. Manage energy, control lanes, and outsmart your mirror image.
 
-![MirrorMatch](https://img.shields.io/badge/Version-2.5-purple)
+![Seque](https://img.shields.io/badge/Version-2.5-purple)
 ![TypeScript](https://img.shields.io/badge/TypeScript-5.0-blue)
 ![React](https://img.shields.io/badge/React-19-61DAFB)
 ![Vite](https://img.shields.io/badge/Vite-7-646CFF)
 
-## 💡 How MirrorMatch Works
+## 💡 How Seque Works
 
 - **The link IS the game** — No accounts, no servers, no databases
 - **Fully deterministic** — Same seed + actions = identical game state
@@ -16,7 +16,7 @@ A tactical card battler where you and your opponent share the same deck. Manage 
 
 ## 🎯 Game Overview
 
-MirrorMatch is a simultaneous-turn card game where two players compete to win 2 out of 3 lanes. Each lane works like Blackjack - get as close to 21 as possible without going over. The twist? Both players draw from the **same shared queue** of cards.
+Seque is a simultaneous-turn card game where two players compete to win 2 out of 3 lanes. Each lane works like Blackjack - get as close to 21 as possible without going over. The twist? Both players draw from the **same shared queue** of cards.
 
 ### Core Mechanics
 
@@ -157,8 +157,8 @@ Modern React frontend with:
 
 ```bash
 # Clone the repository
-git clone https://github.com/CoderArceus/MirrorMatch.git
-cd MirrorMatch
+git clone https://github.com/CoderArceus/Seque.git
+cd Seque
 
 # Install engine dependencies
 cd engine
@@ -191,7 +191,7 @@ npm run build
 ## 📁 Project Structure
 
 ```
-MirrorMatch/
+Seque/
 ├── engine/                 # Game engine (pure TypeScript)
 │   ├── src/
 │   │   ├── actions.ts      # Action type definitions
@@ -272,7 +272,7 @@ npm test
 
 ## 🚀 Deployment
 
-MirrorMatch is deployed as a **static frontend** with no backend required.
+Seque is deployed as a **static frontend** with no backend required.
 
 ### How It Works
 
@@ -288,7 +288,7 @@ The app is configured for **Vercel** deployment.
 **Option 1: Vercel Dashboard (Recommended)**
 1. Go to [vercel.com](https://vercel.com) and sign in with GitHub
 2. Click "Add New Project"
-3. Import the `CoderArceus/MirrorMatch` repository
+3. Import the `CoderArceus/Seque` repository
 4. Set **Root Directory** to `ui`
 5. Framework will auto-detect as Vite
 6. Click Deploy

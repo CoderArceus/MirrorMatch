@@ -18,7 +18,7 @@ export const WelcomeScreen: React.FC<WelcomeScreenProps> = ({
     return (
         <div className="welcome-screen">
             <div className="welcome-content">
-                <h1 className="game-title">MirrorMatch <span className="subtitle">Strategic 21</span></h1>
+                <h1 className="game-title">Seque <span className="subtitle">Strategic 21</span></h1>
                 <p className="game-description">
                     A tactical card battler where you and your opponent share the same deck.
                     Manage energy, control lanes, and outsmart your mirror image.

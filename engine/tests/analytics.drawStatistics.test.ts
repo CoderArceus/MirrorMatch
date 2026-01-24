@@ -1,5 +1,5 @@
 /**
- * MirrorMatch: Strategic 21 - Draw Statistics Tests
+ * Seque: Strategic 21 - Draw Statistics Tests
  * 
  * DAY 18 TASK 2.3: Tests for aggregateDrawStatistics
  * 

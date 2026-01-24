@@ -1,5 +1,5 @@
 /**
- * MirrorMatch: AI Tie-Breaking Tests
+ * Seque: AI Tie-Breaking Tests
  * 
  * DAY 20: Tests for deterministic player-dependent tie-breaking
  * 

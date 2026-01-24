@@ -1,5 +1,5 @@
 /**
- * MirrorMatch Engine - Public API
+ * Seque Engine - Public API
  * All exports for external consumers (UI, server, etc.)
  * 
  * CRITICAL: This is the ONLY entry point for external code.

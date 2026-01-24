@@ -1,5 +1,5 @@
 /**
- * MirrorMatch: Strategic 21 - Action Type Definitions
+ * Seque: Strategic 21 - Action Type Definitions
  * Serializable action types for all legal player actions in the MVP
  */
 

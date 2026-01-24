@@ -1,5 +1,5 @@
 /**
- * MirrorMatch AI Tests - Correctness Validation
+ * Seque AI Tests - Correctness Validation
  * 
  * These tests verify that the AI:
  * - Always returns legal actions
