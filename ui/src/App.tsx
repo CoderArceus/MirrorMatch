@@ -1,6 +1,6 @@
 /**
- * MirrorMatch - Complete Modern Rewrite
- * Clean, efficient, modern React application with all engine features
+ * MirrorMatch - Production Ready
+ * Static frontend with replay-first determinism
  */
 
 import { useState, useEffect, useCallback } from 'react';
@@ -20,7 +20,11 @@ import { recordGame } from './utils/storage';
 
 import './App.css';
 
-type AppMode = 'welcome' | 'playing' | 'results';
+// Production constants
+const APP_VERSION = '2.5';
+const MAX_REPLAY_TURNS = 100; // Safety cap for replay
+
+type AppMode = 'welcome' | 'playing' | 'results' | 'error';
 type PlayMode = 'local' | 'ai' | 'async';
 
 function App() {
@@ -43,6 +47,8 @@ function App() {
   const [myRole, setMyRole] = useState<'player1' | 'player2'>('player1');
   const [asyncError, setAsyncError] = useState<string | null>(null);
   const [showShareHint, setShowShareHint] = useState(false);
+  const [replayVerified, setReplayVerified] = useState(false);
+  const [fatalError, setFatalError] = useState<string | null>(null);
 
   // Check URL for async match on load
   useEffect(() => {
@@ -52,15 +58,45 @@ function App() {
     }
   }, []);
 
-  // Load async match from URL data
+  // Load async match from URL data with safety checks
   const loadAsyncMatch = useCallback((encodedMatch: EncodedMatch) => {
     try {
+      // Safety: Cap replay turns
+      if (encodedMatch.actions.length > MAX_REPLAY_TURNS) {
+        setFatalError('This match link is invalid or corrupted');
+        setMode('error');
+        return;
+      }
+
+      // Validate seed
+      if (typeof encodedMatch.seed !== 'number' || !isFinite(encodedMatch.seed)) {
+        setFatalError('This match link is invalid or corrupted');
+        setMode('error');
+        return;
+      }
+
       // Recreate game state from seed and replay actions
       let state = createInitialGameState(encodedMatch.seed);
       
-      // Replay all completed turns
-      for (const turnAction of encodedMatch.actions) {
+      // Replay all completed turns with validation
+      for (let i = 0; i < encodedMatch.actions.length; i++) {
+        const turnAction = encodedMatch.actions[i];
+        
+        // Validate turn structure
+        if (!turnAction.playerActions || turnAction.playerActions.length !== 2) {
+          setFatalError('This match link is invalid or corrupted');
+          setMode('error');
+          return;
+        }
+        
         state = resolveTurn(state, turnAction);
+        
+        // Safety: Check for unexpected game over during replay
+        if (state.gameOver && i < encodedMatch.actions.length - 1) {
+          setFatalError('This match link is invalid or corrupted');
+          setMode('error');
+          return;
+        }
       }
 
       setGameSeed(encodedMatch.seed);
@@ -68,6 +104,7 @@ function App() {
       setPlayMode('async');
       setGameState(state);
       setHistory(encodedMatch.actions);
+      setReplayVerified(true);
       
       // Set pending actions if any
       if (encodedMatch.pendingActions.player1) {
@@ -82,8 +119,9 @@ function App() {
       // Clear URL params
       window.history.replaceState({}, '', window.location.pathname);
     } catch (err) {
-      setAsyncError('Failed to load match from URL');
       console.error('Async match load error:', err);
+      setFatalError('This match link is invalid or corrupted');
+      setMode('error');
     }
   }, []);
 
@@ -98,6 +136,8 @@ function App() {
     setPlayMode(newPlayMode);
     setAsyncError(null);
     setShowShareHint(false);
+    setReplayVerified(false);
+    setFatalError(null);
     
     if (difficulty) {
       setAIDifficulty(difficulty);
@@ -173,13 +213,19 @@ function App() {
 
     const url = createShareableURL(encoded);
     
-    // Copy to clipboard
-    navigator.clipboard.writeText(url).then(() => {
-      setShowShareHint(true);
-      setTimeout(() => setShowShareHint(false), 3000);
-    }).catch(() => {
-      console.log('Share URL:', url);
-    });
+    // Copy to clipboard with fallback
+    if (navigator.clipboard && navigator.clipboard.writeText) {
+      navigator.clipboard.writeText(url).then(() => {
+        setShowShareHint(true);
+        setTimeout(() => setShowShareHint(false), 3000);
+      }).catch(() => {
+        // Fallback: show URL in prompt
+        prompt('Copy this link to share:', url);
+      });
+    } else {
+      // Fallback for older browsers
+      prompt('Copy this link to share:', url);
+    }
   }, [gameSeed, history, myRole]);
 
   // Resolve turn with both actions
@@ -215,12 +261,35 @@ function App() {
     setPendingP2(null);
     setAsyncError(null);
     setShowShareHint(false);
+    setReplayVerified(false);
+    setFatalError(null);
   }, []);
 
   // Play again with same settings
   const playAgain = useCallback(() => {
     startGame(playMode, aiDifficulty);
   }, [playMode, aiDifficulty, startGame]);
+
+  // Fatal error screen
+  if (mode === 'error' && fatalError) {
+    return (
+      <div className="app">
+        <div className="fatal-error-screen">
+          <div className="error-panel">
+            <div className="error-icon">⚠️</div>
+            <h1>Match Load Failed</h1>
+            <p>{fatalError}</p>
+            <button className="error-btn" onClick={resetGame}>
+              Return to Home
+            </button>
+          </div>
+        </div>
+        <footer className="app-footer">
+          <span>MirrorMatch v{APP_VERSION} — Replay-Verified</span>
+        </footer>
+      </div>
+    );
+  }
 
   return (
     <div className="app">
@@ -252,6 +321,13 @@ function App() {
         />
       )}
 
+      {/* Replay Verified Banner */}
+      {replayVerified && mode === 'playing' && (
+        <div className="replay-verified">
+          <span>✓ State reconstructed from replay</span>
+        </div>
+      )}
+
       {/* Async Error Toast */}
       {asyncError && (
         <div className="error-toast">
@@ -266,6 +342,11 @@ function App() {
           <span>🔗 Share URL copied! Send to opponent.</span>
         </div>
       )}
+
+      {/* Version Footer */}
+      <footer className="app-footer">
+        <span>MirrorMatch v{APP_VERSION} — Replay-Verified</span>
+      </footer>
     </div>
   );
 }

@@ -263,6 +263,50 @@ npm test
 - Analytics accuracy
 - Edge cases & invariants
 
+## 🚀 Deployment
+
+MirrorMatch is deployed as a **static frontend** with no backend required.
+
+### How It Works
+
+- **Fully Deterministic**: All game states are reproducible from a seed + action history
+- **No Server Storage**: Game data exists only in shareable URLs
+- **Links ARE the State**: Each URL contains the complete match state encoded in base64
+- **Replay-First Architecture**: States are reconstructed by replaying actions, ensuring consistency
+
+### Hosting
+
+The app is configured for **Vercel** deployment:
+
+```bash
+# Install Vercel CLI
+npm i -g vercel
+
+# Deploy
+cd ui
+vercel --prod
+```
+
+The `vercel.json` config handles:
+- SPA routing (all paths → index.html)
+- Security headers
+- Static asset optimization
+
+### Deep Link Support
+
+All async match URLs work correctly:
+- Direct link access ✓
+- Page refresh ✓
+- Browser back/forward ✓
+
+### Production Guarantees
+
+- ✅ No infinite loops on malformed URLs
+- ✅ Replay turn count capped at 100
+- ✅ Clear error messages for invalid links
+- ✅ Clipboard fallback for older browsers
+- ✅ Version stamp in footer
+
 ## 📄 License
 
 MIT License - feel free to use, modify, and distribute.

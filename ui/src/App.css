@@ -295,6 +295,102 @@ input:focus, select:focus, textarea:focus {
   color: var(--text-secondary);
 }
 
+/* Replay Verified Banner */
+.replay-verified {
+  position: fixed;
+  top: var(--sp-4);
+  left: 50%;
+  transform: translateX(-50%);
+  display: flex;
+  align-items: center;
+  gap: var(--sp-2);
+  padding: var(--sp-2) var(--sp-4);
+  background: var(--green-dim);
+  border: 1px solid var(--green);
+  border-radius: var(--radius-full);
+  font-size: 0.85rem;
+  font-weight: 600;
+  color: var(--green);
+  z-index: var(--z-toast);
+  animation: fadeIn var(--transition-normal);
+}
+
+/* Version Footer */
+.app-footer {
+  position: fixed;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  display: flex;
+  justify-content: center;
+  padding: var(--sp-2);
+  font-size: 0.7rem;
+  font-family: var(--font-mono);
+  color: var(--text-disabled);
+  pointer-events: none;
+  z-index: 1;
+}
+
+/* Fatal Error Screen */
+.fatal-error-screen {
+  position: fixed;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: var(--bg-primary);
+  z-index: var(--z-modal);
+}
+
+.error-panel {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: var(--sp-4);
+  padding: var(--sp-8);
+  background: var(--bg-card);
+  border: 2px solid var(--red);
+  border-radius: var(--radius-xl);
+  max-width: 400px;
+  text-align: center;
+  box-shadow: 0 0 60px rgba(244, 67, 54, 0.2);
+}
+
+.error-panel .error-icon {
+  font-size: 4rem;
+}
+
+.error-panel h1 {
+  font-size: 1.5rem;
+  font-weight: 700;
+  color: var(--text-primary);
+  margin: 0;
+}
+
+.error-panel p {
+  font-size: 1rem;
+  color: var(--text-muted);
+  margin: 0;
+  line-height: 1.5;
+}
+
+.error-btn {
+  padding: var(--sp-3) var(--sp-6);
+  background: var(--gradient-primary);
+  border: none;
+  border-radius: var(--radius-lg);
+  color: white;
+  font-size: 1rem;
+  font-weight: 700;
+  cursor: pointer;
+  transition: all var(--transition-fast);
+}
+
+.error-btn:hover {
+  transform: translateY(-2px);
+  box-shadow: var(--shadow-glow-blue);
+}
+
 /* Card Animations */
 @keyframes cardDeal {
   from {

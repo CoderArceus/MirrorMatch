@@ -10,4 +10,14 @@ export default defineConfig({
       'mirrormatch-engine': '/Users/aryan/Documents/Strategy21/engine/src',
     },
   },
+  build: {
+    // Production optimizations
+    minify: 'esbuild',
+    sourcemap: false,
+    rollupOptions: {
+      output: {
+        manualChunks: undefined,
+      },
+    },
+  },
 })
