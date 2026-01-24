@@ -1156,6 +1156,96 @@ body {
   text-align: center;
 }
 
+/* Day 33: Async Turn Flow Hardening */
+
+/* Action button disabled state */
+.action-btn:disabled,
+.bid-btn:disabled,
+.lane-select-btn:disabled,
+.submit-bid-btn:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+  pointer-events: none;
+}
+
+/* Stale Tab Banner */
+.stale-tab-banner {
+  padding: 20px;
+  margin: 20px;
+  text-align: center;
+}
+
+.refresh-state-btn {
+  padding: 12px 24px;
+  background: #ff9800;
+  color: white;
+  border: none;
+  border-radius: 8px;
+  font-size: 1rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.refresh-state-btn:hover {
+  background: #f57c00;
+  transform: scale(1.05);
+}
+
+/* Async Error Panel */
+.async-error-panel {
+  padding: 20px;
+  margin: 20px;
+  text-align: center;
+}
+
+.reload-match-btn {
+  padding: 12px 24px;
+  background: #f44336;
+  color: white;
+  border: none;
+  border-radius: 8px;
+  font-size: 1rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.reload-match-btn:hover {
+  background: #d32f2f;
+  transform: scale(1.05);
+}
+
+/* Auction Clarity Banner */
+.auction-clarity-banner {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  padding: 16px 24px;
+  margin: 16px 20px;
+}
+
+.auction-icon {
+  font-size: 2rem;
+}
+
+.auction-message {
+  flex: 1;
+}
+
+.auction-message strong {
+  display: block;
+  font-size: 1.1rem;
+  color: rgba(255, 255, 255, 0.95);
+  margin-bottom: 4px;
+}
+
+.auction-message p {
+  margin: 0;
+  color: rgba(255, 255, 255, 0.7);
+  font-size: 0.9rem;
+}
+
 /* Day 30: Async Match Entry & Recovery UX */
 
 /* Match Entry Clarity Banner */
@@ -1209,6 +1299,7 @@ body {
     opacity: 0;
     transform: translateY(-20px);
   }
+
   to {
     opacity: 1;
     transform: translateY(0);
@@ -1242,14 +1333,17 @@ body {
     opacity: 0;
     transform: translateX(20px);
   }
+
   10% {
     opacity: 1;
     transform: translateX(0);
   }
+
   90% {
     opacity: 1;
     transform: translateX(0);
   }
+
   100% {
     opacity: 0;
     transform: translateX(20px);
@@ -1305,9 +1399,12 @@ body {
 }
 
 @keyframes pulseGlow {
-  0%, 100% {
+
+  0%,
+  100% {
     box-shadow: 0 0 16px rgba(76, 175, 80, 0.3);
   }
+
   50% {
     box-shadow: 0 0 24px rgba(76, 175, 80, 0.5);
   }
@@ -1452,7 +1549,7 @@ body {
 .auction-hint {
   margin-top: 1rem;
   font-style: italic;
-  color: #666;
+  color: rgba(255, 255, 255, 0.5);
   text-align: center;
   font-size: 0.9rem;
 }
@@ -1483,14 +1580,15 @@ body {
 .action-btn.blind-hit:active:not(:disabled) {
   background: #d14915;
 }
+
 /* ============================================================================ */
 /* Day 24: Async PvP UX Improvements */
 /* ============================================================================ */
 
 /* Smart Match Hub */
 .match-hub {
-  background: #f0f4ff;
-  border: 2px solid #4a90e2;
+  background: rgba(74, 144, 226, 0.1);
+  border: 2px solid rgba(74, 144, 226, 0.4);
   border-radius: 8px;
   padding: 1.5rem;
   margin: 1.5rem 0;
@@ -1498,7 +1596,7 @@ body {
 
 .match-hub h3 {
   margin: 0 0 1rem 0;
-  color: #2c5aa0;
+  color: #a0c4ff;
 }
 
 .match-hub-content {
@@ -1541,7 +1639,7 @@ body {
 .match-hub-hint {
   margin: 0;
   font-size: 0.9rem;
-  color: #666;
+  color: rgba(255, 255, 255, 0.6);
   font-style: italic;
 }
 
@@ -1597,7 +1695,7 @@ body {
 
 .auction-label {
   font-size: 0.85rem;
-  color: #4caf50;
+  color: #81c784;
   font-weight: 600;
 }
 
@@ -1781,7 +1879,7 @@ body {
   .match-url-input {
     font-size: 0.75rem;
   }
-  
+
   .move-history {
     max-height: 300px;
   }
@@ -1866,15 +1964,15 @@ body {
   .post-game-explanation {
     padding: 1.5rem;
   }
-  
+
   .post-game-explanation h3 {
     font-size: 1.5rem;
   }
-  
+
   .strategic-summary p {
     font-size: 1rem;
   }
-  
+
   .metric-badge {
     font-size: 0.85rem;
     padding: 0.4rem 0.8rem;

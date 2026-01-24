@@ -231,7 +231,7 @@ function App() {
   // ============================================================================
   // Day 25: Post-Game Explanation Logic (UI Mapping Only)
   // ============================================================================
-  
+
   /**
    * Generate human-friendly strategic summary for game outcome
    * Pure mapping function - consumes existing analytics, no new logic
@@ -239,7 +239,7 @@ function App() {
   const generateStrategicSummary = (state: GameState, viewerPlayerId: 'player1' | 'player2'): string => {
     const isWin = state.winner === viewerPlayerId;
     const isDraw = state.winner === null;
-    
+
     if (isWin) {
       return generateWinSummary(state, viewerPlayerId);
     } else if (isDraw) {
@@ -248,14 +248,14 @@ function App() {
       return generateLossSummary(state, viewerPlayerId);
     }
   };
-  
+
   /**
    * Win summary - uses lane analysis to explain victory
    */
   const generateWinSummary = (state: GameState, playerId: 'player1' | 'player2'): string => {
     const player = state.players.find(p => p.id === playerId)!;
     const opponent = state.players.find(p => p.id !== playerId)!;
-    
+
     // Analyze lanes
     const p1Lanes = state.players[0].lanes;
     const p2Lanes = state.players[1].lanes;
@@ -264,75 +264,75 @@ function App() {
       analyzeLane(p1Lanes[1], p2Lanes[1]),
       analyzeLane(p1Lanes[2], p2Lanes[2]),
     ];
-    
+
     const myWins = outcomes.filter(o => o.winner === playerId).length;
     const opponentBusts = opponent.lanes.filter(l => l.busted).length;
     const my21s = player.lanes.filter(l => l.total === 21 && !l.busted).length;
-    
+
     // Pattern matching for explanation
     if (opponentBusts >= 2) {
       return "You won because your opponent overextended and busted multiple lanes.";
     }
-    
+
     if (my21s >= 2) {
       return "You secured victory with precision play, hitting 21 in multiple lanes.";
     }
-    
+
     if (player.energy > opponent.energy) {
       return "Your superior energy management and strategic positioning secured the victory.";
     }
-    
+
     if (myWins === 2) {
       return "You won by securing two strong lanes with better positioning.";
     }
-    
+
     return "You made strategic decisions that gave you the decisive advantage.";
   };
-  
+
   /**
    * Loss summary - symmetric inverse of win
    */
   const generateLossSummary = (state: GameState, playerId: 'player1' | 'player2'): string => {
     const player = state.players.find(p => p.id === playerId)!;
     const opponent = state.players.find(p => p.id !== playerId)!;
-    
+
     const myBusts = player.lanes.filter(l => l.busted).length;
     const opponent21s = opponent.lanes.filter(l => l.total === 21 && !l.busted).length;
-    
+
     if (myBusts >= 2) {
       return "You lost by overextending and busting multiple lanes.";
     }
-    
+
     if (opponent21s >= 2) {
       return "Your opponent secured victory with precision play, hitting 21 in multiple lanes.";
     }
-    
+
     if (opponent.energy > player.energy) {
       return "Your opponent's superior energy management gave them the advantage.";
     }
-    
+
     return "Your opponent secured two strong lanes with better strategic positioning.";
   };
-  
+
   /**
    * Draw summary - uses analyzeDrawDiagnostics for pressure framing
    */
   const generateDrawSummary = (state: GameState): string => {
     const drawInfo = classifyDraw(state);
-    const diagnostics = analyzeDrawDiagnostics(state, 'player1', 'player2', actionHistory.flatMap(turn => 
+    const diagnostics = analyzeDrawDiagnostics(state, 'player1', 'player2', actionHistory.flatMap(turn =>
       turn.playerActions.map(pa => ({ playerId: pa.playerId, action: pa.action }))
     ));
-    
+
     // Calculate pressure indicators
     const avgWinThreats = (diagnostics.p1.winThreats + diagnostics.p2.winThreats) / 2;
     const avgEnergyRemaining = (diagnostics.p1.energyRemaining + diagnostics.p2.energyRemaining) / 2;
-    
+
     const isHighPressure = avgWinThreats >= 2;
     const isLowPressure = avgEnergyRemaining >= 2;
-    
+
     // Build explanation with pressure framing
     let explanation = '';
-    
+
     switch (drawInfo.type) {
       case 'perfect_symmetry':
         explanation = 'Perfect mirror play — both players made identical optimal decisions.';
@@ -363,17 +363,17 @@ function App() {
       default:
         explanation = 'Both players reached equilibrium with no clear advantage.';
     }
-    
+
     // Add pressure context
     if (isHighPressure && drawInfo.type === 'lane_split') {
       explanation += ' Elite-level competitive balance.';
     } else if (isLowPressure && drawInfo.type !== 'energy_exhaustion') {
       explanation += ' Both players had remaining resources but chose not to risk their positions.';
     }
-    
+
     return explanation;
   };
-  
+
   // ============================================================================
   // Dynamic Action Rendering Components
   // ============================================================================
@@ -416,6 +416,7 @@ function App() {
                 key={bid}
                 onClick={() => setBidAmount(bid)}
                 className={`bid-btn ${bidAmount === bid ? 'selected' : ''}`}
+                disabled={actionsDisabled}
               >
                 {bid}
               </button>
@@ -435,6 +436,7 @@ function App() {
                   key={lane}
                   onClick={() => setVoidStoneLane(lane)}
                   className={`lane-select-btn ${voidStoneLane === lane ? 'selected' : ''}`}
+                  disabled={actionsDisabled}
                 >
                   Lane {String.fromCharCode(65 + lane)}
                 </button>
@@ -443,7 +445,7 @@ function App() {
           </label>
         </div>
 
-        <button onClick={handleSubmit} className="submit-bid-btn">
+        <button onClick={handleSubmit} className="submit-bid-btn" disabled={actionsDisabled}>
           Submit Bid
         </button>
 
@@ -482,6 +484,7 @@ function App() {
                   key={action.targetLane}
                   onClick={() => selectAction(action)}
                   className="action-btn"
+                  disabled={actionsDisabled}
                 >
                   Lane {String.fromCharCode(65 + action.targetLane)}
                 </button>
@@ -497,6 +500,7 @@ function App() {
             <button
               onClick={() => selectAction(burnAction)}
               className="action-btn burn"
+              disabled={actionsDisabled}
             >
               🔥 Burn (1 energy)
             </button>
@@ -513,6 +517,7 @@ function App() {
                   key={action.targetLane}
                   onClick={() => selectAction(action)}
                   className="action-btn stand"
+                  disabled={actionsDisabled}
                 >
                   Lane {String.fromCharCode(65 + action.targetLane)}
                 </button>
@@ -532,6 +537,7 @@ function App() {
                   key={action.targetLane}
                   onClick={() => selectAction(action)}
                   className="action-btn blind-hit"
+                  disabled={actionsDisabled}
                 >
                   Lane {String.fromCharCode(65 + action.targetLane)} (Shackled)
                 </button>
@@ -573,7 +579,7 @@ function App() {
     if (isAuction && myAction.action.type === 'bid' && opponentAction.action.type === 'bid') {
       const myBid = myAction.action.bidAmount;
       const opponentBid = opponentAction.action.bidAmount;
-      
+
       let winner: 'player1' | 'player2';
       let loserLane: number;
       let tiebreak: string | undefined;
@@ -589,7 +595,7 @@ function App() {
         // Tie - use Leader's Burden
         const myScore = beforeState.players.find(p => p.id === myPlayerRole)!.lanes.reduce((sum, l) => sum + (l.busted ? 0 : l.total), 0);
         const oppScore = beforeState.players.find(p => p.id !== myPlayerRole)!.lanes.reduce((sum, l) => sum + (l.busted ? 0 : l.total), 0);
-        
+
         if (myScore > oppScore) {
           winner = myPlayerRole === 'player1' ? 'player2' : 'player1';
           loserLane = myAction.action.potentialVoidStoneLane;
@@ -636,13 +642,13 @@ function App() {
     // Determine result
     let result = '';
     const frontCard = beforeState.queue[0];
-    
+
     if (myAction.action.type === 'take' && opponentAction.action.type === 'take') {
       result = `Both took ${frontCard?.rank}${frontCard?.suit}`;
     } else if (myAction.action.type === 'burn' && opponentAction.action.type === 'burn') {
       result = `Card ${frontCard?.rank}${frontCard?.suit} burned`;
     } else if ((myAction.action.type === 'take' && opponentAction.action.type === 'burn') ||
-               (myAction.action.type === 'burn' && opponentAction.action.type === 'take')) {
+      (myAction.action.type === 'burn' && opponentAction.action.type === 'take')) {
       result = `Card burned → Ash consolation`;
     } else if (myAction.action.type === 'take') {
       result = `You took ${frontCard?.rank}${frontCard?.suit}`;
@@ -714,29 +720,48 @@ function App() {
     // Opening the link means you are that player
     return urlMatch.currentPlayer;
   });
-  
+
   // Day 30: Match restoration indicator
   const [matchRestored, setMatchRestored] = useState<boolean>(false);
+  
+  // Day 33: Error handling and stale tab detection
+  const [asyncError, setAsyncError] = useState<string | null>(null);
+  const [staleTurn, setStaleTurn] = useState<boolean>(false);
 
   const player1 = gameState.players[0];
   const player2 = gameState.players[1];
 
   // Check if it's my turn in async mode
   const isMyTurn = !asyncMode || (activePlayer === myPlayerRole);
+  
+  // Day 33: Turn submission lock - disable all actions after submit
+  const actionSubmitted = asyncMode && pendingActions[myPlayerRole] !== undefined;
+  const actionsDisabled = asyncMode && (actionSubmitted || !isMyTurn || staleTurn || asyncError !== null);
 
   // Validate URL match on mount
   useEffect(() => {
     if (urlMatch && urlMatch.version !== 1) {
       setUrlError('Invalid match version. Please request a new link.');
     }
-    
+
     // Day 30: Show match restored indicator on load
     if (urlMatch && actionHistory.length > 0) {
       setMatchRestored(true);
       // Hide after 3 seconds
       setTimeout(() => setMatchRestored(false), 3000);
     }
-  }, [urlMatch]);
+    
+    // Day 33: Stale tab detection
+    if (asyncMode && urlMatch) {
+      const replayTurnNumber = gameState.turnNumber;
+      const actionCount = urlMatch.actions?.length || 0;
+      
+      // If we've replayed more turns than the URL has, flag as stale
+      if (replayTurnNumber > actionCount + 1) {
+        setStaleTurn(true);
+      }
+    }
+  }, [urlMatch, asyncMode, gameState.turnNumber]);
 
   // Handle feedback submission
   const submitFeedback = (type: FeedbackType) => {
@@ -1134,15 +1159,57 @@ function App() {
 
         {/* Day 30: URL Error State */}
         {asyncMode && urlError && (
-          <div className="url-error-panel">
+          <div className="url-error-panel dark-panel">
             <div className="error-header">⚠️ Invalid Match Link</div>
             <p className="error-message">{urlError}</p>
-            <button 
+            <button
               onClick={() => window.location.href = window.location.origin}
               className="start-new-btn"
             >
               Start New Match
             </button>
+          </div>
+        )}
+
+        {/* Day 33: Stale Tab Detection Banner */}
+        {asyncMode && staleTurn && (
+          <div className="stale-tab-banner dark-panel">
+            <div className="error-header">⚠️ This match has progressed in another tab</div>
+            <p className="error-message">The game state is out of sync. Please refresh to continue.</p>
+            <button
+              onClick={() => window.location.reload()}
+              className="refresh-state-btn"
+            >
+              Refresh State
+            </button>
+          </div>
+        )}
+
+        {/* Day 33: Async Error Panel */}
+        {asyncMode && asyncError && (
+          <div className="async-error-panel dark-panel">
+            <div className="error-header">⚠️ Action Failed</div>
+            <p className="error-message">{asyncError}</p>
+            <button
+              onClick={() => {
+                setAsyncError(null);
+                window.location.reload();
+              }}
+              className="reload-match-btn"
+            >
+              Reload Match
+            </button>
+          </div>
+        )}
+
+        {/* Day 33: Auction-Specific Clarity Banner */}
+        {asyncMode && !gameState.gameOver && ([4, 8].includes(gameState.turnNumber)) && !actionSubmitted && (
+          <div className="auction-clarity-banner dark-panel">
+            <div className="auction-icon">🎯</div>
+            <div className="auction-message">
+              <strong>Dark Auction — Energy Bid Required</strong>
+              <p>Place your bid and select a Void Stone target lane</p>
+            </div>
           </div>
         )}
 
@@ -1366,24 +1433,24 @@ function App() {
                 {gameState.winner && gameState.winner !== myPlayerRole && '💔 You Lost'}
                 {!gameState.winner && '🤝 Draw'}
               </h3>
-              
+
               {/* Strategic Summary */}
               <div className="strategic-summary">
                 <p>{generateStrategicSummary(gameState, asyncMode ? myPlayerRole : 'player1')}</p>
               </div>
-              
+
               {/* Metrics Badges (Optional, lightweight) */}
               {!gameState.winner && (
                 <div className="draw-metrics">
                   {(() => {
                     const diagnostics = analyzeDrawDiagnostics(
-                      gameState, 
-                      'player1', 
-                      'player2', 
+                      gameState,
+                      'player1',
+                      'player2',
                       actionHistory.flatMap(turn => turn.playerActions.map(pa => ({ playerId: pa.playerId, action: pa.action })))
                     );
                     const viewerMetrics = myPlayerRole === 'player1' ? diagnostics.p1 : diagnostics.p2;
-                    
+
                     return (
                       <>
                         {viewerMetrics.winThreats >= 2 && (
@@ -1469,16 +1536,16 @@ function App() {
         )}
 
         {/* Day 27: Turn Resolution Summary + Auction Transparency */}
-        {asyncMode && actionHistory.length > 0 && (
+        {actionHistory.length > 0 && (
           <div className="move-history dark-panel">
             <h3>📜 Turn History</h3>
-            
+
             {/* Day 32: Move History Invariants - Verification */}
             {(() => {
               const expectedTurnCount = gameState.turnNumber - 1; // turnNumber is 1-indexed, history is 0-indexed
               const actualTurnCount = actionHistory.length;
               const mismatch = actualTurnCount !== expectedTurnCount;
-              
+
               if (mismatch && SHOW_DEBUG_REPLAY_INFO) {
                 return (
                   <div className="history-mismatch-warning">
@@ -1486,7 +1553,7 @@ function App() {
                   </div>
                 );
               }
-              
+
               if (SHOW_DEBUG_REPLAY_INFO) {
                 return (
                   <div className="history-debug-info">
@@ -1494,10 +1561,10 @@ function App() {
                   </div>
                 );
               }
-              
+
               return null;
             })()}
-            
+
             <div className="move-history-list">
               {/* Day 32: Single Source of Truth - Move history derived ONLY from resolved turns in actionHistory
                   - actionHistory is populated ONLY when resolveTurn() completes with both player actions
@@ -1506,23 +1573,23 @@ function App() {
                   - DO NOT use pendingActions or raw action counts for history rendering */}
               {actionHistory.map((turnActions, turnIndex) => {
                 // Reconstruct state before and after this turn for summary
-                const stateBeforeTurn = turnIndex === 0 
+                const stateBeforeTurn = turnIndex === 0
                   ? createInitialGameState(gameSeed)
                   : runReplay({ initialState: createInitialGameState(gameSeed), turns: actionHistory.slice(0, turnIndex) });
                 const stateAfterTurn = runReplay({ initialState: createInitialGameState(gameSeed), turns: actionHistory.slice(0, turnIndex + 1) });
-                
+
                 const summary = generateTurnSummary(turnActions, turnIndex + 1, stateBeforeTurn, stateAfterTurn);
-                
+
                 // Day 30: Highlight latest turn
                 const isLatestTurn = turnIndex === actionHistory.length - 1;
-                
+
                 return (
                   <div key={turnIndex} className={`history-turn ${summary.isAuction ? 'auction-turn' : ''} ${isLatestTurn ? 'latest-turn' : ''}`}>
                     <div className="history-turn-header">
                       <div className="history-turn-number">Turn {turnIndex + 1}</div>
                       {summary.isAuction && <span className="auction-label">🎯 Auction</span>}
                     </div>
-                    
+
                     {summary.isAuction && summary.auctionDetails ? (
                       <div className="auction-summary">
                         <div className="auction-bids">
@@ -1553,47 +1620,6 @@ function App() {
                   </div>
                 );
               })}
-            </div>
-          </div>
-        )}
-
-        {/* Legacy Day 24: Move History for non-async (deprecated, keeping for compatibility) */}
-        {!asyncMode && actionHistory.length > 0 && (
-          <div className="move-history dark-panel">
-            <h3>📜 Move History</h3>
-            <div className="move-history-list">
-              {actionHistory.map((turnActions, turnIndex) => (
-                <div key={turnIndex} className="history-turn">
-                  <div className="history-turn-number">Turn {turnIndex + 1}</div>
-                  <div className="history-actions">
-                    {turnActions.playerActions.map((pa) => {
-                      const action = pa.action;
-                      let actionDesc = '';
-                      
-                      if (action.type === 'take') {
-                        actionDesc = `Take → Lane ${String.fromCharCode(65 + action.targetLane)}`;
-                      } else if (action.type === 'burn') {
-                        actionDesc = 'Burn';
-                      } else if (action.type === 'stand') {
-                        actionDesc = `Stand Lane ${String.fromCharCode(65 + action.targetLane)}`;
-                      } else if (action.type === 'pass') {
-                        actionDesc = 'Pass';
-                      } else if (action.type === 'bid') {
-                        actionDesc = `Bid ${action.bidAmount}`;
-                      } else if (action.type === 'blind_hit') {
-                        actionDesc = `Blind Hit → Lane ${String.fromCharCode(65 + action.targetLane)}`;
-                      }
-                      
-                      return (
-                        <div key={pa.playerId} className="history-action">
-                          <span className="history-player">{pa.playerId === 'player1' ? 'P1' : 'P2'}:</span>
-                          <span className="history-action-desc">{actionDesc}</span>
-                        </div>
-                      );
-                    })}
-                  </div>
-                </div>
-              ))}
             </div>
           </div>
         )}
@@ -1634,7 +1660,7 @@ function App() {
                   };
                   const url = createShareableURL(match);
                   navigator.clipboard.writeText(url).then(() => {
-                    alert(gameState.gameOver 
+                    alert(gameState.gameOver
                       ? 'Final match link copied! Share this to show the result.'
                       : 'Match link copied to clipboard!');
                   }).catch(() => {
@@ -1646,7 +1672,7 @@ function App() {
                 📋 {gameState.gameOver ? 'Share Result' : 'Copy Link'}
               </button>
               <p className="match-hub-hint">
-                {gameState.gameOver 
+                {gameState.gameOver
                   ? '🏁 Share this link with your opponent to show the final result.'
                   : '💡 This link updates automatically. Share anytime to let your opponent see the current game state.'}
               </p>
