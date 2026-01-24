@@ -34,6 +34,9 @@ import { runReplay } from '../../engine/src';
 
 import './App.css';
 
+// Day 32: Dev visual verification mode (UI-only)
+const SHOW_DEBUG_REPLAY_INFO = false;
+
 type PendingActions = {
   player1?: PlayerAction;
   player2?: PlayerAction;
@@ -402,7 +405,7 @@ function App() {
     };
 
     return (
-      <div className="auction-controls">
+      <div className="auction-controls dark-panel">
         <div className="bid-selection-group">
           <label>
             <strong>Your Bid</strong>
@@ -1467,9 +1470,40 @@ function App() {
 
         {/* Day 27: Turn Resolution Summary + Auction Transparency */}
         {asyncMode && actionHistory.length > 0 && (
-          <div className="move-history">
+          <div className="move-history dark-panel">
             <h3>📜 Turn History</h3>
+            
+            {/* Day 32: Move History Invariants - Verification */}
+            {(() => {
+              const expectedTurnCount = gameState.turnNumber - 1; // turnNumber is 1-indexed, history is 0-indexed
+              const actualTurnCount = actionHistory.length;
+              const mismatch = actualTurnCount !== expectedTurnCount;
+              
+              if (mismatch && SHOW_DEBUG_REPLAY_INFO) {
+                return (
+                  <div className="history-mismatch-warning">
+                    ⚠️ History Mismatch: Expected {expectedTurnCount} turns, found {actualTurnCount}
+                  </div>
+                );
+              }
+              
+              if (SHOW_DEBUG_REPLAY_INFO) {
+                return (
+                  <div className="history-debug-info">
+                    Turn Count: {actualTurnCount} | State Turn: {gameState.turnNumber}
+                  </div>
+                );
+              }
+              
+              return null;
+            })()}
+            
             <div className="move-history-list">
+              {/* Day 32: Single Source of Truth - Move history derived ONLY from resolved turns in actionHistory
+                  - actionHistory is populated ONLY when resolveTurn() completes with both player actions
+                  - Each entry represents exactly one resolved game turn
+                  - Turn numbers are strictly sequential: turnIndex + 1
+                  - DO NOT use pendingActions or raw action counts for history rendering */}
               {actionHistory.map((turnActions, turnIndex) => {
                 // Reconstruct state before and after this turn for summary
                 const stateBeforeTurn = turnIndex === 0 
@@ -1525,7 +1559,7 @@ function App() {
 
         {/* Legacy Day 24: Move History for non-async (deprecated, keeping for compatibility) */}
         {!asyncMode && actionHistory.length > 0 && (
-          <div className="move-history">
+          <div className="move-history dark-panel">
             <h3>📜 Move History</h3>
             <div className="move-history-list">
               {actionHistory.map((turnActions, turnIndex) => (

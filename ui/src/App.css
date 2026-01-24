@@ -944,16 +944,22 @@ body {
 }
 
 
+/* Day 32: Dark Mode Lock-In - Shared Utility */
+
+/* Dark panel utility - apply to all UI panels to enforce dark mode consistency */
+.dark-panel {
+  background: rgba(30, 30, 30, 0.95);
+  color: rgba(255, 255, 255, 0.9);
+  border-radius: 12px;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.5);
+}
+
 /* Day 29: Auction Button UI + Move History - Dark Mode Consistent */
 
 /* Auction Controls - Dark Mode */
 .auction-controls {
-  background: rgba(30, 30, 30, 0.95);
-  color: rgba(255, 255, 255, 0.9);
-  border-radius: 12px;
   padding: 24px;
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.5);
-  border: 1px solid rgba(255, 255, 255, 0.1);
 }
 
 .bid-selection-group {
@@ -1076,13 +1082,8 @@ body {
 
 /* Move History - Dark Mode */
 .move-history {
-  background: rgba(30, 30, 30, 0.95);
-  color: rgba(255, 255, 255, 0.9);
-  border-radius: 12px;
   padding: 20px;
   margin-top: 20px;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.5);
-  border: 1px solid rgba(255, 255, 255, 0.1);
 }
 
 .move-history h3 {
@@ -1129,6 +1130,30 @@ body {
   color: rgba(255, 255, 255, 0.7);
   background: rgba(158, 158, 158, 0.1);
   border: 1px solid rgba(158, 158, 158, 0.3);
+}
+
+/* Day 32: Dev Visual Verification Styles */
+
+.history-mismatch-warning {
+  background: rgba(244, 67, 54, 0.2);
+  border: 2px solid #f44336;
+  border-radius: 8px;
+  padding: 12px;
+  margin-bottom: 16px;
+  color: #f44336;
+  font-weight: 600;
+  text-align: center;
+}
+
+.history-debug-info {
+  background: rgba(33, 150, 243, 0.15);
+  border: 1px solid #2196f3;
+  border-radius: 6px;
+  padding: 8px;
+  margin-bottom: 12px;
+  color: #2196f3;
+  font-size: 0.85rem;
+  text-align: center;
 }
 
 /* Day 30: Async Match Entry & Recovery UX */
