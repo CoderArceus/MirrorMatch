@@ -944,15 +944,16 @@ body {
 }
 
 
-/* Day 28: Auction Button UI + Light Mode */
+/* Day 29: Auction Button UI + Move History - Dark Mode Consistent */
 
-/* Auction Controls - Light Mode */
+/* Auction Controls - Dark Mode */
 .auction-controls {
-  background: #ffffff;
-  color: #212121;
+  background: rgba(30, 30, 30, 0.95);
+  color: rgba(255, 255, 255, 0.9);
   border-radius: 12px;
   padding: 24px;
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.5);
+  border: 1px solid rgba(255, 255, 255, 0.1);
 }
 
 .bid-selection-group {
@@ -962,7 +963,7 @@ body {
 .bid-selection-group label {
   display: block;
   margin-bottom: 12px;
-  color: #424242;
+  color: rgba(255, 255, 255, 0.9);
   font-size: 1rem;
   font-weight: 600;
 }
@@ -978,9 +979,9 @@ body {
   width: 48px;
   height: 48px;
   border-radius: 50%;
-  border: 2px solid #bdbdbd;
-  background: #f5f5f5;
-  color: #424242;
+  border: 2px solid rgba(255, 255, 255, 0.2);
+  background: rgba(255, 255, 255, 0.05);
+  color: rgba(255, 255, 255, 0.8);
   font-size: 1.1rem;
   font-weight: 600;
   cursor: pointer;
@@ -989,7 +990,7 @@ body {
 
 .bid-btn:hover {
   border-color: #4caf50;
-  background: #e8f5e9;
+  background: rgba(76, 175, 80, 0.15);
   transform: scale(1.05);
 }
 
@@ -1001,12 +1002,13 @@ body {
 }
 
 .selected-bid-display {
-  color: #616161;
+  color: rgba(255, 255, 255, 0.7);
   font-size: 0.95rem;
   padding: 8px 12px;
-  background: #f5f5f5;
+  background: rgba(255, 255, 255, 0.05);
   border-radius: 6px;
   text-align: center;
+  border: 1px solid rgba(255, 255, 255, 0.1);
 }
 
 .selected-bid-display strong {
@@ -1020,15 +1022,15 @@ body {
 .void-stone-lane-group label {
   display: block;
   margin-bottom: 12px;
-  color: #424242;
+  color: rgba(255, 255, 255, 0.9);
   font-weight: 600;
 }
 
 .lane-select-btn {
   padding: 10px 20px;
-  border: 2px solid #bdbdbd;
-  background: #f5f5f5;
-  color: #424242;
+  border: 2px solid rgba(255, 255, 255, 0.2);
+  background: rgba(255, 255, 255, 0.05);
+  color: rgba(255, 255, 255, 0.8);
   border-radius: 8px;
   cursor: pointer;
   transition: all 0.2s ease;
@@ -1037,7 +1039,7 @@ body {
 
 .lane-select-btn:hover {
   border-color: #ff9800;
-  background: #fff3e0;
+  background: rgba(255, 152, 0, 0.15);
 }
 
 .lane-select-btn.selected {
@@ -1066,52 +1068,53 @@ body {
 }
 
 .auction-hint {
-  color: #757575;
+  color: rgba(255, 255, 255, 0.6);
   font-size: 0.9rem;
   margin: 0;
   text-align: center;
 }
 
-/* Move History - Light Mode */
+/* Move History - Dark Mode */
 .move-history {
-  background: #ffffff;
-  color: #212121;
+  background: rgba(30, 30, 30, 0.95);
+  color: rgba(255, 255, 255, 0.9);
   border-radius: 12px;
   padding: 20px;
   margin-top: 20px;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.5);
+  border: 1px solid rgba(255, 255, 255, 0.1);
 }
 
 .move-history h3 {
-  color: #424242;
+  color: rgba(255, 255, 255, 0.9);
   margin-top: 0;
 }
 
 .history-turn {
-  background: #f5f5f5;
-  border-left: 3px solid #bdbdbd;
+  background: rgba(255, 255, 255, 0.05);
+  border-left: 3px solid rgba(255, 255, 255, 0.2);
 }
 
 .history-turn.auction-turn {
-  background: #e8f5e9;
+  background: rgba(76, 175, 80, 0.08);
   border-left: 3px solid #4caf50;
 }
 
 .history-turn-number {
-  color: #424242;
+  color: rgba(255, 255, 255, 0.9);
   font-weight: 600;
 }
 
 .action-line {
-  color: #616161;
+  color: rgba(255, 255, 255, 0.8);
 }
 
 .result-line {
-  color: #757575;
+  color: rgba(255, 255, 255, 0.6);
 }
 
 .auction-bids {
-  color: #424242;
+  color: rgba(255, 255, 255, 0.8);
 }
 
 .auction-result {
@@ -1119,13 +1122,13 @@ body {
 }
 
 .auction-tiebreak {
-  color: #757575;
+  color: rgba(255, 255, 255, 0.6);
 }
 
 .auction-effect {
-  color: #424242;
-  background: #fff3e0;
-  border: 1px solid #ffb74d;
+  color: rgba(255, 255, 255, 0.7);
+  background: rgba(158, 158, 158, 0.1);
+  border: 1px solid rgba(158, 158, 158, 0.3);
 }
 
 /* Dark Auction Banner */
