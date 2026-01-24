@@ -121,8 +121,10 @@
 .game-content {
   flex: 1;
   display: flex;
-  gap: var(--sp-4);
-  padding: var(--sp-4);
+  gap: var(--sp-3);
+  padding: var(--sp-3);
+  padding-top: 12vh;
+  padding-bottom: 5vh;
   min-height: 0;
   position: relative;
   z-index: 1;
@@ -133,14 +135,15 @@
   flex: 1;
   display: flex;
   flex-direction: column;
-  gap: var(--sp-3);
-  padding: var(--sp-4);
+  gap: var(--sp-2);
+  padding: var(--sp-3);
   background: rgba(30, 30, 42, 0.6);
   backdrop-filter: blur(16px);
-  border-radius: var(--radius-2xl);
+  border-radius: var(--radius-xl);
   transition: all var(--transition-normal);
   position: relative;
   box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
+  overflow: hidden;
 }
 
 .player-board.active {
@@ -197,18 +200,20 @@
 .lanes {
   flex: 1;
   display: flex;
-  gap: var(--sp-3);
+  gap: var(--sp-2);
   min-height: 0;
+  overflow: hidden;
 }
 
 .lane {
   flex: 1;
   display: flex;
   flex-direction: column;
-  padding: var(--sp-3);
+  padding: var(--sp-2);
   background: rgba(0, 0, 0, 0.2);
-  border-radius: var(--radius-xl);
+  border-radius: var(--radius-lg);
   transition: all var(--transition-fast);
+  overflow: hidden;
 }
 
 .lane.locked {
@@ -244,11 +249,11 @@
 }
 
 .lane-total {
-  font-size: 2.5rem;
+  font-size: 2rem;
   font-weight: 800;
   color: var(--text-primary);
   line-height: 1;
-  margin-bottom: var(--sp-2);
+  margin-bottom: var(--sp-1);
 }
 
 .lane-total.blackjack {
@@ -296,6 +301,7 @@
   align-items: center;
   gap: var(--sp-3);
   padding: var(--sp-3);
+  margin: 0 3vw;
   background: rgba(30, 30, 42, 0.6);
   backdrop-filter: blur(16px);
   border-radius: var(--radius-2xl);
@@ -314,8 +320,6 @@
   display: flex;
   flex-direction: column;
   gap: var(--sp-2);
-  flex: 1;
-  justify-content: center;
 }
 
 .queue-card {
@@ -357,15 +361,19 @@
   padding: var(--sp-1) var(--sp-3);
   background: rgba(0, 0, 0, 0.3);
   border-radius: var(--radius-full);
+  margin-top: var(--sp-3);
 }
 
 /* ============================================
    Controls Dock
    ============================================ */
 .controls-dock {
-  padding: var(--sp-3) var(--sp-4);
+  flex: 1;
+  padding: var(--sp-4);
   display: flex;
   justify-content: center;
+  align-items: flex-start;
+  padding-top: var(--sp-6);
   position: relative;
   z-index: 10;
 }
@@ -439,8 +447,8 @@
 .action-group {
   display: flex;
   align-items: center;
-  gap: var(--sp-2);
-  padding: var(--sp-2) var(--sp-3);
+  gap: var(--sp-3);
+  padding: var(--sp-3) var(--sp-4);
   background: rgba(30, 30, 42, 0.8);
   backdrop-filter: blur(12px);
   border-radius: var(--radius-2xl);
@@ -452,9 +460,8 @@
   box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3), 0 0 30px rgba(74, 158, 255, 0.1);
 }
 .action-group.burn { 
-  background: linear-gradient(135deg, rgba(244, 67, 54, 0.2) 0%, rgba(30, 30, 42, 0.8) 100%);
-  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3), 0 0 30px rgba(244, 67, 54, 0.1);
-  padding: 0;
+  background: linear-gradient(135deg, rgba(244, 67, 54, 0.25) 0%, rgba(30, 30, 42, 0.8) 100%);
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3), 0 0 30px rgba(244, 67, 54, 0.15);
 }
 .action-group.stand { 
   background: linear-gradient(135deg, rgba(76, 175, 80, 0.2) 0%, rgba(30, 30, 42, 0.8) 100%);
@@ -474,11 +481,11 @@
 }
 
 .group-icon {
-  font-size: 1.5rem;
+  font-size: 1.75rem;
 }
 
 .group-name {
-  font-size: 0.9rem;
+  font-size: 1rem;
   font-weight: 700;
   color: var(--text-secondary);
 }
@@ -489,15 +496,15 @@
 }
 
 .action-btn {
-  width: 52px;
-  height: 52px;
+  width: 72px;
+  height: 72px;
   display: flex;
   align-items: center;
   justify-content: center;
   background: rgba(0, 0, 0, 0.3);
   border: none;
-  border-radius: var(--radius-lg);
-  font-size: 1.25rem;
+  border-radius: var(--radius-xl);
+  font-size: 1.5rem;
   font-weight: 800;
   color: var(--text-primary);
   cursor: pointer;
@@ -509,23 +516,48 @@
   background: rgba(0, 0, 0, 0.4);
 }
 
-.action-btn.wide {
-  width: auto;
-  padding: var(--sp-3) var(--sp-4);
-  gap: var(--sp-2);
-  font-size: 1rem;
-  border-radius: var(--radius-2xl);
+.burn-btn-inner {
+  display: flex;
+  align-items: center;
+  gap: var(--sp-3);
+  padding: var(--sp-2) var(--sp-3);
 }
 
-.action-btn.wide:hover {
-  background: rgba(244, 67, 54, 0.2);
-  transform: none;
+.burn-icon {
+  width: 72px;
+  height: 72px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(244, 67, 54, 0.3);
+  border-radius: var(--radius-xl);
+  font-size: 2rem;
+  transition: all var(--transition-fast);
 }
 
-.action-btn.wide .cost {
-  font-size: 0.85rem;
+.burn-text {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 2px;
+}
+
+.burn-label {
+  font-size: 1.1rem;
+  font-weight: 700;
+  color: var(--text-primary);
+}
+
+.burn-cost {
+  font-size: 0.9rem;
   font-weight: 600;
-  color: var(--text-muted);
+  color: var(--red);
+  opacity: 0.8;
+}
+
+.action-group.burn:hover .burn-icon {
+  background: rgba(244, 67, 54, 0.5);
+  box-shadow: 0 0 20px rgba(244, 67, 54, 0.4);
 }
 
 .action-group.take .action-btn:hover { 

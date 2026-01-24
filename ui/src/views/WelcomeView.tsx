@@ -24,7 +24,7 @@ export const WelcomeView: React.FC<WelcomeViewProps> = ({ onStart }) => {
   };
 
   return (
-    <div className="welcome-view">
+    <div className={`welcome-view ${showRules ? 'scrollable' : ''}`}>
       {/* Background decoration */}
       <div className="welcome-bg">
         <div className="bg-orb orb-1"></div>

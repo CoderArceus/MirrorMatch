@@ -250,12 +250,14 @@ export const GameView: React.FC<GameViewProps> = ({
           )}
 
           {burn && (
-            <div className="action-group burn">
-              <button className="action-btn wide" onClick={() => onAction(activePlayer, burn)}>
-                <span className="group-icon">🔥</span>
-                <span className="group-name">Burn</span>
-                <span className="cost">-1⚡</span>
-              </button>
+            <div className="action-group burn" onClick={() => onAction(activePlayer, burn)} style={{ cursor: 'pointer' }}>
+              <div className="burn-btn-inner">
+                <div className="burn-icon">🔥</div>
+                <div className="burn-text">
+                  <span className="burn-label">Burn Card</span>
+                  <span className="burn-cost">−1 ⚡ Energy</span>
+                </div>
+              </div>
             </div>
           )}
 
