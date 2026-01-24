@@ -1156,6 +1156,98 @@ body {
   text-align: center;
 }
 
+/* Day 34: Async Reliability Feedback & Trust Polish */
+
+/* Restoring Match Banner */
+.restoring-banner {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 12px;
+  padding: 16px 24px;
+  margin: 16px 20px;
+  text-align: center;
+  font-weight: 500;
+}
+
+.spinner {
+  font-size: 1.3rem;
+  animation: spin 2s linear infinite;
+}
+
+@keyframes spin {
+  0% { transform: rotate(0deg); }
+  100% { transform: rotate(360deg); }
+}
+
+/* Submission Success */
+.submission-success {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  padding: 12px 24px;
+  margin: 12px 20px;
+  background: rgba(76, 175, 80, 0.15);
+  border: 1px solid #4caf50;
+  animation: fadeInOut 3s ease-in-out;
+}
+
+.success-icon {
+  font-size: 1.2rem;
+  color: #4caf50;
+}
+
+/* Submission Failed */
+.submission-failed {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 12px;
+  padding: 12px 24px;
+  margin: 12px 20px;
+  background: rgba(244, 67, 54, 0.15);
+  border: 1px solid #f44336;
+}
+
+.error-icon {
+  font-size: 1.2rem;
+  color: #f44336;
+}
+
+.retry-btn {
+  padding: 8px 16px;
+  background: #ff9800;
+  color: white;
+  border: none;
+  border-radius: 6px;
+  font-size: 0.9rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.retry-btn:hover {
+  background: #f57c00;
+  transform: scale(1.05);
+}
+
+/* Opponent Waiting Animation */
+.opponent-waiting {
+  display: inline-block;
+}
+
+.animated-dots {
+  display: inline-block;
+  animation: blink 1.5s infinite;
+}
+
+@keyframes blink {
+  0%, 20% { opacity: 0; }
+  40% { opacity: 0.5; }
+  60%, 100% { opacity: 1; }
+}
+
 /* Day 33: Async Turn Flow Hardening */
 
 /* Action button disabled state */

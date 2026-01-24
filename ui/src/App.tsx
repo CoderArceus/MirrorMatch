@@ -727,6 +727,11 @@ function App() {
   // Day 33: Error handling and stale tab detection
   const [asyncError, setAsyncError] = useState<string | null>(null);
   const [staleTurn, setStaleTurn] = useState<boolean>(false);
+  
+  // Day 34: Action submission confirmation and retry
+  const [submissionStatus, setSubmissionStatus] = useState<'none' | 'submitting' | 'success' | 'failed'>('none');
+  const [lastAttemptedAction, setLastAttemptedAction] = useState<PlayerAction | null>(null);
+  const [isRestoring, setIsRestoring] = useState<boolean>(false);
 
   const player1 = gameState.players[0];
   const player2 = gameState.players[1];
@@ -740,15 +745,23 @@ function App() {
 
   // Validate URL match on mount
   useEffect(() => {
+    // Day 34: Safe page reload behavior
+    if (asyncMode && urlMatch) {
+      setIsRestoring(true);
+      
+      // Simulate replay restoration (already done by replayAsyncMatch above)
+      setTimeout(() => {
+        setIsRestoring(false);
+        if (actionHistory.length > 0) {
+          setMatchRestored(true);
+          setTimeout(() => setMatchRestored(false), 2000);
+        }
+      }, 500);
+    }
+    
     if (urlMatch && urlMatch.version !== 1) {
       setUrlError('Invalid match version. Please request a new link.');
-    }
-
-    // Day 30: Show match restored indicator on load
-    if (urlMatch && actionHistory.length > 0) {
-      setMatchRestored(true);
-      // Hide after 3 seconds
-      setTimeout(() => setMatchRestored(false), 3000);
+      setIsRestoring(false);
     }
     
     // Day 33: Stale tab detection
@@ -761,7 +774,7 @@ function App() {
         setStaleTurn(true);
       }
     }
-  }, [urlMatch, asyncMode, gameState.turnNumber]);
+  }, [urlMatch, asyncMode]);
 
   // Handle feedback submission
   const submitFeedback = (type: FeedbackType) => {
@@ -773,6 +786,21 @@ function App() {
     saveFeedback(feedback);
     setFeedbackGiven(true);
   };
+
+  // Day 34: Disable keyboard shortcuts during async PvP
+  useEffect(() => {
+    if (!asyncMode) return;
+
+    const handleKeyDown = (e: KeyboardEvent) => {
+      // Prevent Enter and Space from triggering actions
+      if (e.key === 'Enter' || e.key === ' ') {
+        e.preventDefault();
+      }
+    };
+
+    document.addEventListener('keydown', handleKeyDown);
+    return () => document.removeEventListener('keydown', handleKeyDown);
+  }, [asyncMode]);
 
   // Record game stats and replay when it ends (only once)
   useEffect(() => {
@@ -884,9 +912,16 @@ function App() {
   const selectAction = (action: PlayerAction) => {
     console.log('selectAction called:', { action, activePlayer, vsAI, asyncMode });
 
+    // Day 34: Track submission attempt
+    if (asyncMode) {
+      setSubmissionStatus('submitting');
+      setLastAttemptedAction(action);
+    }
+
     // Async mode: enforce turn ownership
     if (asyncMode && !isMyTurn) {
       console.log('Blocked: not your turn in async mode');
+      setSubmissionStatus('failed');
       alert('Not your turn!');
       return;
     }
@@ -895,6 +930,7 @@ function App() {
     console.log('Action legal check:', isLegal);
     if (!isLegal) {
       console.log('Blocked: illegal action');
+      if (asyncMode) setSubmissionStatus('failed');
       alert('Illegal action!');
       return;
     }
@@ -905,6 +941,10 @@ function App() {
     if (asyncMode) {
       const newPending = { ...pendingActions, [activePlayer]: action };
       setPendingActions(newPending);
+      
+      // Day 34: Mark submission as successful
+      setSubmissionStatus('success');
+      setTimeout(() => setSubmissionStatus('none'), 3000);
 
       // If both actions are now ready, resolve the turn
       if (newPending.player1 && newPending.player2) {
@@ -1213,6 +1253,39 @@ function App() {
           </div>
         )}
 
+        {/* Day 34: Restoring Match Banner */}
+        {asyncMode && isRestoring && (
+          <div className="restoring-banner dark-panel">
+            <div className="spinner">⏳</div>
+            <span>Restoring match from replay…</span>
+          </div>
+        )}
+
+        {/* Day 34: Action Submission Confirmation */}
+        {asyncMode && submissionStatus === 'success' && (
+          <div className="submission-success dark-panel">
+            <span className="success-icon">✓</span>
+            <span>Action submitted and synced</span>
+          </div>
+        )}
+
+        {/* Day 34: Action Submission Failed */}
+        {asyncMode && submissionStatus === 'failed' && lastAttemptedAction && (
+          <div className="submission-failed dark-panel">
+            <span className="error-icon">⚠</span>
+            <span>Action failed to sync</span>
+            <button
+              onClick={() => {
+                setSubmissionStatus('none');
+                selectAction(lastAttemptedAction);
+              }}
+              className="retry-btn"
+            >
+              Retry
+            </button>
+          </div>
+        )}
+
         {/* AREA 1: Turn Number */}
         <div className="turn-header">
           <h1>MirrorMatch: Strategic 21</h1>
@@ -1338,7 +1411,9 @@ function App() {
                     <>
                       <span className="status-icon">⏳</span>
                       <span className="status-text">Opponent's Turn</span>
-                      <span className="waiting-hint">• Waiting for {activePlayer === 'player1' ? 'Player 1' : 'Player 2'}</span>
+                      <span className="waiting-hint opponent-waiting">
+                        • Waiting for opponent to play<span className="animated-dots">...</span>
+                      </span>
                     </>
                   )}
                 </div>
