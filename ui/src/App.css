@@ -1378,11 +1378,12 @@ body {
 .lane-select-btn {
   padding: 0.5rem 1rem;
   margin: 0.25rem;
-  border: 2px solid #ccc;
-  background: white;
+  border: 2px solid rgba(255, 255, 255, 0.2);
+  background: rgba(255, 255, 255, 0.05);
   cursor: pointer;
   border-radius: 4px;
   font-weight: 500;
+  color: rgba(255, 255, 255, 0.9);
   transition: all 0.2s ease;
 }
 
@@ -1438,7 +1439,7 @@ body {
   font-style: italic;
   margin: 0.5rem 0;
   padding: 0.5rem;
-  background: #fff5f2;
+  background: rgba(255, 107, 53, 0.1);
   border-left: 3px solid #ff6b35;
   border-radius: 4px;
 }
@@ -1490,10 +1491,10 @@ body {
   padding: 0.75rem;
   font-family: 'Courier New', monospace;
   font-size: 0.85rem;
-  border: 1px solid #ccc;
+  border: 1px solid rgba(255, 255, 255, 0.2);
   border-radius: 4px;
-  background: white;
-  color: #333;
+  background: rgba(255, 255, 255, 0.05);
+  color: rgba(255, 255, 255, 0.9);
 }
 
 .copy-link-btn {
@@ -1647,8 +1648,8 @@ body {
 
 /* Turn & State Clarity */
 .async-state-indicator {
-  background: #fff;
-  border: 2px solid #e0e0e0;
+  background: rgba(30, 30, 30, 0.95);
+  border: 2px solid rgba(255, 255, 255, 0.1);
   border-radius: 8px;
   padding: 1rem;
   margin-bottom: 1rem;
@@ -1715,8 +1716,8 @@ body {
 }
 
 .history-turn {
-  background: white;
-  border: 1px solid #e0e0e0;
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid rgba(255, 255, 255, 0.1);
   border-radius: 4px;
   padding: 0.75rem;
 }
