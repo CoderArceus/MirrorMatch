@@ -672,25 +672,19 @@ function applyVoidStone(player: PlayerState, laneIndex: number, _turn: number): 
   const newLanes = [...player.lanes];
   const lane = newLanes[laneIndex];
 
-  // Create Void Stone card logic? Or just Shackle?
-  // PRD: "receives a Void Stone and must place it on any lane... Lane becomes Shackled"
-  // Does Void Stone have a card value? "Scores 0 unless final total is 20 or 21".
-  // It's likely a modifier status, or a special card.
-  // "Shackled Lanes Rules ... Scores 0 unless..."
-  // Let's implement Void Stone as a CARD if it needs to occupy a slot, or just state.
-  // PRD says "receive a Void Stone... place it".
-  // Let's add a Void Stone card with rank 'VOID' (special) or usage.
-  // But `LaneState` has `shackled` boolean. That might be enough.
-  // Let's set shackled = true.
-  // And if it acts as a card visually, we might need a dummy card.
-  // For now, implementing mechanism: shackled = true.
-  // Also "If lane was locked -> it becomes unlocked".
+  // Day 26 Bug Fix: Check if lane has been shackled before
+  // If lane has already been shackled, discard the Void Stone (no effect)
+  if (lane.hasBeenShackled) {
+    // Void Stone is discarded, no lane is shackled
+    return player;
+  }
 
+  // Apply shackle to the lane
   newLanes[laneIndex] = {
     ...lane,
     shackled: true,
+    hasBeenShackled: true, // Mark as having been shackled
     locked: false, // Unlock if locked
-    // Optionally add a visual "Void Stone" card if UI needs it, strictly backend state is `shackled`.
   };
 
   return {
@@ -701,29 +695,22 @@ function applyVoidStone(player: PlayerState, laneIndex: number, _turn: number): 
 
 /**
  * Resolves Overheat decay and costs
+ * Day 26 Bug Fix: Both Burn and BlindHit apply Overheat (+2)
+ * Overheat blocks both Burn and BlindHit actions
  */
 function resolveOverheat(player: PlayerState, action: PlayerAction): PlayerState {
   let newOverheat = player.overheat;
 
-  // Decay at end of turn (before applying new costs? or after?)
-  // "Overheat decreases at end of each turn"
+  // Decay at end of turn
+  // Overheat decreases by 1 at the end of each turn
   if (newOverheat > 0) {
     newOverheat--;
   }
 
-  // Apply costs
-  if (action.type === 'blind_hit') {
-    // "Adds Overheat +2. If no Overheat: Set to 2."
-    // "If player already has Overheat: Overheat duration increased by 2"
-    // Wait, if it decayed above, we add 2 to the decayed value?
-    // Or do we add cost first then decay?
-    // "decreases at END of each turn". Logic flow usually: Action -> Cost -> End Phase (Decay).
-    // So: Value + Cost - 1.
-    // Let's revert the decay for a moment or adjust logic.
-    // Let's say we do: apply cost, then decay.
-    // But `resolveOverheat` is called once.
-
-    // Original value
+  // Apply costs - Both Burn and BlindHit cause overheat (+2)
+  if (action.type === 'burn' || action.type === 'blind_hit') {
+    // Burn/BlindHit adds Overheat +2
+    // If player already has overheat, duration increased by 2
     const currentStart = player.overheat;
     let nextVal = currentStart;
 

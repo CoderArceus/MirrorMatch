@@ -44,6 +44,7 @@ export interface LaneState {
   readonly locked: boolean; // true if lane hit 21, busted, or was Stood
   readonly busted: boolean; // true if total > 21
   readonly shackled: boolean; // true if lane lost Dark Auction (v2.5)
+  readonly hasBeenShackled: boolean; // true if lane has EVER been shackled (prevents re-shackling)
 }
 
 // ============================================================================

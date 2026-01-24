@@ -139,6 +139,7 @@ function createEmptyLane(): LaneState {
     locked: false,
     busted: false,
     shackled: false,
+    hasBeenShackled: false,
   };
 }
 

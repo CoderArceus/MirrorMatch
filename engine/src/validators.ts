@@ -53,13 +53,16 @@ export function getLegalActions(
     // In auction turns, ONLY BidAction is legal
     // Players can bid 0 to their current energy
     for (let bid = 0; bid <= player.energy; bid++) {
-      // Must specify a valid lane for the Void Stone if they lose
+      // Day 26 Bug Fix: Must specify a valid lane for the Void Stone if they lose
+      // Only lanes that have NEVER been shackled are valid targets
       for (let i = 0; i < player.lanes.length; i++) {
-        legalActions.push({
-          type: 'bid',
-          bidAmount: bid,
-          potentialVoidStoneLane: i
-        });
+        if (!player.lanes[i].hasBeenShackled) {
+          legalActions.push({
+            type: 'bid',
+            bidAmount: bid,
+            potentialVoidStoneLane: i
+          });
+        }
       }
     }
     return legalActions;
@@ -75,7 +78,8 @@ export function getLegalActions(
   }
 
   // Check BURN action
-  // Must have energy AND not be overheated
+  // Day 26 Bug Fix: Burn is blocked by overheat (shared cooldown with BlindHit)
+  // Burn requires energy > 0 AND overheat === 0
   if (state.queue.length > 0 && player.energy > 0 && player.overheat === 0) {
     legalActions.push({ type: 'burn' });
   }
@@ -96,8 +100,9 @@ export function getLegalActions(
   }
 
   // Check BLIND HIT actions (v2.5)
-  // Legal if: Lane is Shackled, Lane not locked, Deck has cards
-  if (state.deck.length > 0) {
+  // Legal if: Lane is Shackled, Lane not locked, Deck has cards, overheat === 0
+  // Day 26 Bug Fix: BlindHit is blocked by overheat (shared cooldown with Burn)
+  if (state.deck.length > 0 && player.overheat === 0) {
     for (let i = 0; i < player.lanes.length; i++) {
       const lane = player.lanes[i];
       if (lane.shackled && !lane.locked) {
