@@ -1,109 +1,59 @@
-/* PlayerPanel.css */
-.player-panel {
-    background: #333;
-    border-radius: 6px;
-    padding: 12px;
-    /* Reduced from 16px */
-    border: 2px solid transparent;
-    /* Reduced from 3px */
-    height: 100%;
-    /* Ensure it fills container */
-    display: flex;
-    flex-direction: column;
-    overflow: hidden;
-    /* CRITICAL: Prevent panel from growing beyond parent */
-    min-height: 0;
-    /* CRITICAL: Allow flex child to shrink below content size */
+/* PlayerPanel - Compact */
+
+.player-panel-compact {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  height: 100%;
 }
 
-.player-panel.active {
-    border-color: #4a9eff;
-    box-shadow: 0 0 10px rgba(74, 158, 255, 0.4);
+.player-info-bar {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 8px 12px;
+  background: rgba(0, 0, 0, 0.3);
+  border-radius: 8px;
+  flex-shrink: 0;
 }
 
-.player-header {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    margin-bottom: 8px;
-    /* Reduced from 12px */
-    flex-shrink: 0;
+.player-name {
+  font-size: 1rem;
+  font-weight: 700;
+  color: rgba(255, 255, 255, 0.95);
 }
 
-.player-header h2 {
-    font-size: 16px;
-    /* Reduced from 20px */
-    color: #4a9eff;
-    margin: 0;
+.player-stats {
+  display: flex;
+  gap: 8px;
 }
 
-.energy {
-    font-size: 14px;
-    /* Reduced from 16px */
-    font-weight: bold;
-    color: #ffdd57;
+.stat {
+  font-size: 0.9rem;
+  font-weight: 600;
+  color: rgba(255, 255, 255, 0.8);
 }
 
-.lanes {
-    display: grid;
-    grid-template-columns: repeat(3, 1fr);
-    gap: 8px;
-    /* Reduced from 12px */
-    flex-grow: 1;
-    /* Allow lanes to expand */
-    align-items: stretch;
-    /* Cards fill height */
-    overflow-y: auto;
-    /* CRITICAL: Scroll if cards overflow */
-    min-height: 0;
-    /* Allow shrinking */
-    padding-bottom: 4px;
-    /* Space for scrollbar */
+.stat.heat {
+  color: #ff9800;
 }
 
-.lanes::-webkit-scrollbar {
-    width: 4px;
+.lanes-compact {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  flex: 1;
+  overflow-y: auto;
 }
 
-.lanes::-webkit-scrollbar-thumb {
-    background: #555;
-    border-radius: 2px;
-}
-
-.lanes::-webkit-scrollbar-track {
-    background: rgba(0, 0, 0, 0.1);
-}
-
-.pending-action {
-    margin-top: 8px;
-    /* Compact margin */
-    padding: 6px;
-    /* Compact padding */
-    background: #2e5c2e;
-    border-radius: 4px;
-    text-align: center;
-    font-weight: bold;
-    color: #76ff76;
-    font-size: 0.8rem;
-    flex-shrink: 0;
-    /* Never shrink this status */
-}
-
-/* Overheat Indicator */
-.overheat {
-    color: #ff6b35;
-    font-weight: bold;
-    font-size: 0.9rem;
-    margin-top: 0.25rem;
-}
-
-.overheat-badge {
-    background: rgba(255, 87, 34, 0.15);
-    color: #ff5722;
-    border: 1px solid rgba(255, 87, 34, 0.3);
-    padding: 2px 8px;
-    border-radius: 4px;
-    font-size: 0.85rem;
-    display: inline-block;
-    margin-left: 8px;
+.pending-indicator {
+  padding: 6px 12px;
+  background: rgba(76, 175, 80, 0.15);
+  border: 1px solid rgba(76, 175, 80, 0.3);
+  border-radius: 6px;
+  text-align: center;
+  font-size: 0.85rem;
+  font-weight: 600;
+  color: #4caf50;
+  flex-shrink: 0;
 }

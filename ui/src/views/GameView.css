@@ -1,0 +1,766 @@
+/* GameView - Dock-style elements, no borders, cohesive background */
+
+.game-view {
+  width: 100%;
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  position: relative;
+  overflow: hidden;
+}
+
+/* Background - Fixed, similar to welcome page */
+.game-bg {
+  position: fixed;
+  inset: 0;
+  overflow: hidden;
+  pointer-events: none;
+  z-index: 0;
+  background: var(--bg-primary);
+}
+
+.bg-orb {
+  position: absolute;
+  border-radius: 50%;
+  filter: blur(120px);
+  opacity: 0.4;
+}
+
+.orb-1 {
+  width: 600px;
+  height: 600px;
+  background: var(--purple);
+  top: -200px;
+  left: -200px;
+}
+
+.orb-2 {
+  width: 500px;
+  height: 500px;
+  background: var(--blue);
+  bottom: -200px;
+  right: -150px;
+}
+
+/* ============================================
+   Header - Dock Style
+   ============================================ */
+.game-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: var(--sp-3) var(--sp-4);
+  position: relative;
+  z-index: 10;
+}
+
+.header-btn {
+  padding: var(--sp-2) var(--sp-4);
+  background: rgba(30, 30, 42, 0.8);
+  backdrop-filter: blur(12px);
+  border: none;
+  border-radius: var(--radius-full);
+  color: var(--text-secondary);
+  font-size: 0.85rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all var(--transition-fast);
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.3);
+}
+
+.header-btn:hover {
+  background: rgba(40, 40, 55, 0.9);
+  color: var(--text-primary);
+  transform: translateY(-1px);
+}
+
+.turn-display {
+  display: flex;
+  align-items: center;
+  gap: var(--sp-2);
+  padding: var(--sp-2) var(--sp-4);
+  background: rgba(30, 30, 42, 0.8);
+  backdrop-filter: blur(12px);
+  border-radius: var(--radius-full);
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.3);
+}
+
+.turn-label {
+  font-size: 0.75rem;
+  font-weight: 600;
+  color: var(--text-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+.turn-number {
+  font-size: 1.25rem;
+  font-weight: 800;
+  color: var(--blue);
+}
+
+.auction-tag {
+  font-size: 1rem;
+  animation: pulse 1.5s infinite;
+}
+
+.mode-display {
+  padding: var(--sp-2) var(--sp-4);
+  background: rgba(30, 30, 42, 0.8);
+  backdrop-filter: blur(12px);
+  border-radius: var(--radius-full);
+  font-size: 0.85rem;
+  color: var(--text-muted);
+  font-weight: 600;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.3);
+}
+
+/* ============================================
+   Main Content
+   ============================================ */
+.game-content {
+  flex: 1;
+  display: flex;
+  gap: var(--sp-4);
+  padding: var(--sp-4);
+  min-height: 0;
+  position: relative;
+  z-index: 1;
+}
+
+/* Player Board - Dock Style */
+.player-board {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: var(--sp-3);
+  padding: var(--sp-4);
+  background: rgba(30, 30, 42, 0.6);
+  backdrop-filter: blur(16px);
+  border-radius: var(--radius-2xl);
+  transition: all var(--transition-normal);
+  position: relative;
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
+}
+
+.player-board.active {
+  background: rgba(74, 158, 255, 0.1);
+  box-shadow: 
+    0 8px 32px rgba(0, 0, 0, 0.3),
+    0 0 60px rgba(74, 158, 255, 0.15),
+    inset 0 1px 0 rgba(74, 158, 255, 0.2);
+}
+
+.player-board.ready {
+  background: rgba(76, 175, 80, 0.1);
+  box-shadow: 
+    0 8px 32px rgba(0, 0, 0, 0.3),
+    0 0 60px rgba(76, 175, 80, 0.15),
+    inset 0 1px 0 rgba(76, 175, 80, 0.2);
+}
+
+.board-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.board-header h2 {
+  font-size: 1.1rem;
+  font-weight: 700;
+  color: var(--text-primary);
+  margin: 0;
+}
+
+.player-stats {
+  display: flex;
+  gap: var(--sp-2);
+}
+
+.stat {
+  padding: 4px 12px;
+  border-radius: var(--radius-full);
+  font-size: 0.85rem;
+  font-weight: 700;
+  background: rgba(0, 0, 0, 0.3);
+}
+
+.stat.energy {
+  color: var(--yellow);
+}
+
+.stat.overheat {
+  color: var(--orange);
+}
+
+/* Lanes - Subtle separation */
+.lanes {
+  flex: 1;
+  display: flex;
+  gap: var(--sp-3);
+  min-height: 0;
+}
+
+.lane {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  padding: var(--sp-3);
+  background: rgba(0, 0, 0, 0.2);
+  border-radius: var(--radius-xl);
+  transition: all var(--transition-fast);
+}
+
+.lane.locked {
+  background: rgba(76, 175, 80, 0.15);
+  box-shadow: inset 0 0 20px rgba(76, 175, 80, 0.1);
+}
+
+.lane.busted {
+  background: rgba(244, 67, 54, 0.15);
+  opacity: 0.6;
+}
+
+.lane.shackled {
+  background: rgba(156, 39, 176, 0.15);
+  box-shadow: inset 0 0 20px rgba(156, 39, 176, 0.1);
+}
+
+.lane-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: var(--sp-2);
+}
+
+.lane-label {
+  font-size: 0.85rem;
+  font-weight: 700;
+  color: var(--text-muted);
+}
+
+.lane-badge {
+  font-size: 1rem;
+}
+
+.lane-total {
+  font-size: 2.5rem;
+  font-weight: 800;
+  color: var(--text-primary);
+  line-height: 1;
+  margin-bottom: var(--sp-2);
+}
+
+.lane-total.blackjack {
+  color: var(--green);
+  text-shadow: 0 0 30px var(--green-glow);
+}
+
+.lane-total.bust {
+  color: var(--red);
+}
+
+.lane-cards {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin-top: auto;
+}
+
+.empty-lane {
+  color: var(--text-disabled);
+  font-size: 1rem;
+}
+
+.card-chip {
+  padding: 4px 8px;
+  background: rgba(0, 0, 0, 0.3);
+  border-radius: var(--radius-sm);
+  font-size: 0.8rem;
+  font-weight: 600;
+  font-family: var(--font-mono);
+}
+
+.card-chip.red { color: #ff6b6b; }
+.card-chip.black { color: var(--text-secondary); }
+.card-chip.ash { background: rgba(244, 67, 54, 0.3); color: var(--red); }
+
+/* ============================================
+   Queue Panel - Dock Style
+   ============================================ */
+.queue-panel {
+  width: 120px;
+  flex-shrink: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: var(--sp-3);
+  padding: var(--sp-3);
+  background: rgba(30, 30, 42, 0.6);
+  backdrop-filter: blur(16px);
+  border-radius: var(--radius-2xl);
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
+}
+
+.queue-header {
+  font-size: 0.7rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  color: var(--text-muted);
+}
+
+.queue-cards {
+  display: flex;
+  flex-direction: column;
+  gap: var(--sp-2);
+  flex: 1;
+  justify-content: center;
+}
+
+.queue-card {
+  width: 56px;
+  height: 72px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  background: rgba(0, 0, 0, 0.3);
+  border-radius: var(--radius-lg);
+  transition: all var(--transition-fast);
+}
+
+.queue-card.active {
+  background: linear-gradient(135deg, rgba(74, 158, 255, 0.3) 0%, rgba(74, 158, 255, 0.1) 100%);
+  box-shadow: 0 0 30px var(--blue-glow);
+  transform: scale(1.1);
+}
+
+.queue-card.red { color: #ff6b6b; }
+.queue-card.black { color: var(--text-primary); }
+
+.queue-card .rank {
+  font-size: 1.3rem;
+  font-weight: 800;
+  line-height: 1;
+}
+
+.queue-card .suit {
+  font-size: 1rem;
+  line-height: 1;
+}
+
+.deck-info {
+  font-size: 0.8rem;
+  font-weight: 600;
+  color: var(--text-muted);
+  padding: var(--sp-1) var(--sp-3);
+  background: rgba(0, 0, 0, 0.3);
+  border-radius: var(--radius-full);
+}
+
+/* ============================================
+   Controls Dock
+   ============================================ */
+.controls-dock {
+  padding: var(--sp-3) var(--sp-4);
+  display: flex;
+  justify-content: center;
+  position: relative;
+  z-index: 10;
+}
+
+/* Status Messages - Dock Pill Style */
+.controls-status {
+  display: flex;
+  align-items: center;
+  gap: var(--sp-3);
+  padding: var(--sp-3) var(--sp-5);
+  background: rgba(30, 30, 42, 0.8);
+  backdrop-filter: blur(12px);
+  border-radius: var(--radius-full);
+  font-size: 1rem;
+  font-weight: 600;
+  color: var(--text-secondary);
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
+}
+
+.controls-status.ready {
+  background: rgba(76, 175, 80, 0.2);
+  color: var(--green);
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3), 0 0 30px rgba(76, 175, 80, 0.2);
+}
+
+.controls-status.ai {
+  background: rgba(255, 152, 0, 0.2);
+  color: var(--orange);
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3), 0 0 30px rgba(255, 152, 0, 0.2);
+}
+
+.status-icon {
+  font-size: 1.25rem;
+}
+
+.spinner {
+  width: 18px;
+  height: 18px;
+  border: 2px solid currentColor;
+  border-top-color: transparent;
+  border-radius: 50%;
+  animation: spin 0.8s linear infinite;
+}
+
+/* Regular Controls - Dock Style */
+.controls-actions {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: var(--sp-3);
+}
+
+.controls-player {
+  font-size: 0.8rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  color: var(--text-muted);
+  padding: var(--sp-1) var(--sp-3);
+  background: rgba(0, 0, 0, 0.3);
+  border-radius: var(--radius-full);
+}
+
+.action-groups {
+  display: flex;
+  gap: var(--sp-3);
+  flex-wrap: wrap;
+  justify-content: center;
+}
+
+.action-group {
+  display: flex;
+  align-items: center;
+  gap: var(--sp-2);
+  padding: var(--sp-2) var(--sp-3);
+  background: rgba(30, 30, 42, 0.8);
+  backdrop-filter: blur(12px);
+  border-radius: var(--radius-2xl);
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
+}
+
+.action-group.take { 
+  background: linear-gradient(135deg, rgba(74, 158, 255, 0.2) 0%, rgba(30, 30, 42, 0.8) 100%);
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3), 0 0 30px rgba(74, 158, 255, 0.1);
+}
+.action-group.burn { 
+  background: linear-gradient(135deg, rgba(244, 67, 54, 0.2) 0%, rgba(30, 30, 42, 0.8) 100%);
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3), 0 0 30px rgba(244, 67, 54, 0.1);
+  padding: 0;
+}
+.action-group.stand { 
+  background: linear-gradient(135deg, rgba(76, 175, 80, 0.2) 0%, rgba(30, 30, 42, 0.8) 100%);
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3), 0 0 30px rgba(76, 175, 80, 0.1);
+}
+.action-group.blind { 
+  background: linear-gradient(135deg, rgba(156, 39, 176, 0.2) 0%, rgba(30, 30, 42, 0.8) 100%);
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3), 0 0 30px rgba(156, 39, 176, 0.1);
+}
+
+.group-header {
+  display: flex;
+  align-items: center;
+  gap: var(--sp-2);
+  padding-right: var(--sp-3);
+  border-right: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.group-icon {
+  font-size: 1.5rem;
+}
+
+.group-name {
+  font-size: 0.9rem;
+  font-weight: 700;
+  color: var(--text-secondary);
+}
+
+.group-buttons {
+  display: flex;
+  gap: var(--sp-2);
+}
+
+.action-btn {
+  width: 52px;
+  height: 52px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(0, 0, 0, 0.3);
+  border: none;
+  border-radius: var(--radius-lg);
+  font-size: 1.25rem;
+  font-weight: 800;
+  color: var(--text-primary);
+  cursor: pointer;
+  transition: all var(--transition-fast);
+}
+
+.action-btn:hover {
+  transform: translateY(-3px);
+  background: rgba(0, 0, 0, 0.4);
+}
+
+.action-btn.wide {
+  width: auto;
+  padding: var(--sp-3) var(--sp-4);
+  gap: var(--sp-2);
+  font-size: 1rem;
+  border-radius: var(--radius-2xl);
+}
+
+.action-btn.wide:hover {
+  background: rgba(244, 67, 54, 0.2);
+  transform: none;
+}
+
+.action-btn.wide .cost {
+  font-size: 0.85rem;
+  font-weight: 600;
+  color: var(--text-muted);
+}
+
+.action-group.take .action-btn:hover { 
+  background: rgba(74, 158, 255, 0.3); 
+  box-shadow: 0 8px 24px var(--blue-glow); 
+}
+.action-group.stand .action-btn:hover { 
+  background: rgba(76, 175, 80, 0.3); 
+  box-shadow: 0 8px 24px var(--green-glow); 
+}
+.action-group.blind .action-btn:hover { 
+  background: rgba(156, 39, 176, 0.3); 
+  box-shadow: 0 8px 24px var(--purple-glow); 
+}
+
+/* Auction Controls - Dock Style */
+.controls-auction {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: var(--sp-4);
+  padding: var(--sp-4) var(--sp-5);
+  background: rgba(30, 30, 42, 0.8);
+  backdrop-filter: blur(12px);
+  border-radius: var(--radius-2xl);
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3), 0 0 40px rgba(156, 39, 176, 0.15);
+  min-width: 360px;
+}
+
+.auction-header {
+  display: flex;
+  align-items: center;
+  gap: var(--sp-4);
+  width: 100%;
+  justify-content: center;
+}
+
+.auction-badge {
+  font-size: 1rem;
+  font-weight: 800;
+  color: var(--purple);
+}
+
+.auction-player {
+  font-size: 0.85rem;
+  font-weight: 600;
+  color: var(--text-muted);
+  padding: var(--sp-1) var(--sp-3);
+  background: rgba(0, 0, 0, 0.3);
+  border-radius: var(--radius-full);
+}
+
+.auction-fields {
+  display: flex;
+  gap: var(--sp-6);
+}
+
+.auction-field {
+  display: flex;
+  flex-direction: column;
+  gap: var(--sp-2);
+}
+
+.auction-field label {
+  font-size: 0.75rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: var(--text-muted);
+}
+
+.chip-group {
+  display: flex;
+  gap: var(--sp-2);
+}
+
+.chip {
+  width: 44px;
+  height: 44px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(0, 0, 0, 0.3);
+  border: none;
+  border-radius: 50%;
+  font-size: 1rem;
+  font-weight: 700;
+  color: var(--text-secondary);
+  cursor: pointer;
+  transition: all var(--transition-fast);
+}
+
+.chip:hover:not(:disabled):not(.invalid) {
+  background: rgba(156, 39, 176, 0.3);
+}
+
+.chip.selected {
+  background: var(--purple);
+  color: white;
+  box-shadow: 0 0 20px var(--purple-glow);
+}
+
+.chip.invalid {
+  opacity: 0.3;
+  cursor: not-allowed;
+}
+
+.submit-btn {
+  padding: var(--sp-3) var(--sp-6);
+  background: var(--gradient-purple);
+  border: none;
+  border-radius: var(--radius-full);
+  color: white;
+  font-size: 1rem;
+  font-weight: 700;
+  cursor: pointer;
+  transition: all var(--transition-fast);
+  box-shadow: 0 4px 20px var(--purple-glow);
+}
+
+.submit-btn:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 8px 30px var(--purple-glow);
+}
+
+/* ============================================
+   History Bar - Not Dock, Subtle
+   ============================================ */
+.history-bar {
+  display: flex;
+  justify-content: center;
+  gap: var(--sp-2);
+  padding: var(--sp-2) var(--sp-4);
+  background: rgba(0, 0, 0, 0.3);
+  overflow-x: auto;
+  position: relative;
+  z-index: 10;
+}
+
+.history-chip {
+  padding: 3px 8px;
+  background: rgba(255, 255, 255, 0.05);
+  border-radius: var(--radius-sm);
+  font-size: 0.65rem;
+  font-family: var(--font-mono);
+  color: var(--text-disabled);
+  text-transform: uppercase;
+  flex-shrink: 0;
+}
+
+/* ============================================
+   Responsive
+   ============================================ */
+@media (max-width: 900px) {
+  .game-content {
+    flex-direction: column;
+    gap: var(--sp-3);
+    padding: var(--sp-3);
+  }
+
+  .player-board {
+    flex: none;
+    padding: var(--sp-3);
+  }
+
+  .queue-panel {
+    width: 100%;
+    flex-direction: row;
+    padding: var(--sp-2) var(--sp-3);
+    gap: var(--sp-4);
+    border-radius: var(--radius-xl);
+  }
+
+  .queue-cards {
+    flex-direction: row;
+    flex: none;
+  }
+
+  .queue-card {
+    width: 48px;
+    height: 64px;
+  }
+
+  .lanes {
+    gap: var(--sp-2);
+  }
+
+  .lane {
+    padding: var(--sp-2);
+  }
+
+  .lane-total {
+    font-size: 2rem;
+  }
+
+  .action-groups {
+    gap: var(--sp-2);
+  }
+
+  .action-btn {
+    width: 46px;
+    height: 46px;
+    font-size: 1.1rem;
+  }
+
+  .controls-auction {
+    min-width: auto;
+    padding: var(--sp-3);
+  }
+
+  .auction-fields {
+    flex-direction: column;
+    gap: var(--sp-3);
+  }
+
+  .chip {
+    width: 40px;
+    height: 40px;
+    font-size: 0.9rem;
+  }
+}
+
+@media (max-width: 600px) {
+  .game-header {
+    padding: var(--sp-2) var(--sp-3);
+  }
+
+  .header-btn,
+  .turn-display,
+  .mode-display {
+    padding: var(--sp-1) var(--sp-3);
+    font-size: 0.8rem;
+  }
+
+  .turn-number {
+    font-size: 1.1rem;
+  }
+}
