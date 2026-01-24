@@ -353,7 +353,72 @@ function chooseScoredAction(
   }));
 
   scored.sort((a, b) => b.score - a.score);
-  return scored[0].action;
+  
+  // DAY 20: Deterministic tie-breaking to break perfect_symmetry
+  // When multiple actions have the same best score, break ties by player ID
+  return breakTie(scored, playerId);
+}
+
+/**
+ * DAY 20: Deterministic tie-breaking policy
+ * 
+ * Breaks perfect_symmetry in AI mirror matches by selecting different actions
+ * when multiple actions have equal scores.
+ * 
+ * Policy:
+ * - Player 1 (or player with ID alphabetically first): selects FIRST tied action
+ * - Player 2 (or player with ID alphabetically last): selects LAST tied action
+ * 
+ * This creates deterministic divergence without randomness or rule changes.
+ * 
+ * @param scored - Actions with scores, sorted by score descending
+ * @param playerId - ID of player making decision
+ * @returns Selected action after tie-breaking
+ */
+function breakTie(
+  scored: Array<{ action: PlayerAction; score: number }>,
+  playerId: string
+): PlayerAction {
+  if (scored.length === 0) {
+    throw new Error('breakTie called with empty actions array');
+  }
+
+  // Find all actions with the best score
+  const bestScore = scored[0].score;
+  const bestActions = scored.filter(s => s.score === bestScore);
+
+  // If only one best action, return it (no tie)
+  if (bestActions.length === 1) {
+    return bestActions[0].action;
+  }
+
+  // Tie detected - apply deterministic player-dependent policy
+  // Sort tied actions deterministically by action properties
+  const sortedTies = bestActions.sort((a, b) => {
+    // Sort by action type first (alphabetically)
+    if (a.action.type !== b.action.type) {
+      return a.action.type.localeCompare(b.action.type);
+    }
+    
+    // For actions with targetLane, sort by lane index
+    if ('targetLane' in a.action && 'targetLane' in b.action) {
+      return a.action.targetLane - b.action.targetLane;
+    }
+    
+    // Otherwise maintain current order
+    return 0;
+  });
+
+  // Player-dependent selection:
+  // Player 1 (alphabetically first) → pick first
+  // Player 2 (alphabetically last) → pick last
+  const isPlayer1 = playerId === 'player1' || playerId < 'player2';
+  
+  if (isPlayer1) {
+    return sortedTies[0].action; // First tied action
+  } else {
+    return sortedTies[sortedTies.length - 1].action; // Last tied action
+  }
 }
 
 
