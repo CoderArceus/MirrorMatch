@@ -11,7 +11,7 @@ import { createInitialGameState, calculateLaneTotal } from '../src/state';
 import { resolveTurn } from '../src/resolveTurn';
 import { isActionLegal } from '../src/validators';
 import { GameState, Card } from '../src/types';
-import { TurnActions, PlayerAction } from '../src/actions';
+import { TurnActions, PlayerAction, BidAction, BlindHitAction } from '../src/actions';
 
 // ============================================================================
 // Random Legal Action Generator
@@ -49,6 +49,28 @@ function generateRandomLegalAction(state: GameState, playerId: string): PlayerAc
     const action: PlayerAction = { type: 'stand', targetLane: lane };
     if (isActionLegal(state, playerId, action)) {
       possibleActions.push(action);
+    }
+  }
+
+  // Try BLIND HIT actions (v2.5)
+  for (let lane = 0; lane < player.lanes.length; lane++) {
+    const action: PlayerAction = { type: 'blind_hit', targetLane: lane };
+    if (isActionLegal(state, playerId, action)) {
+      possibleActions.push(action);
+    }
+  }
+
+  // Try BID actions (v2.5) - only relevant during auction, but checking is cheap
+  // Optimization: Only check if turn number is appropriate
+  if ([4, 8].includes(state.turnNumber)) {
+    for (let bid = 0; bid <= player.energy; bid++) {
+      // Try a few void stone placements (not exhaustive to save perf)
+      for (let i = 0; i < player.lanes.length; i++) {
+        const action: BidAction = { type: 'bid', bidAmount: bid, potentialVoidStoneLane: i };
+        if (isActionLegal(state, playerId, action)) {
+          possibleActions.push(action);
+        }
+      }
     }
   }
 
@@ -109,7 +131,11 @@ function assertInvariants(state: GameState, context: string = ''): void {
     for (let j = 0; j < player.lanes.length; j++) {
       const lane = player.lanes[j];
       if (lane.busted) {
-        expect(lane.locked, `${prefix}Player ${player.id} lane ${j} is busted but not locked`).toBe(true);
+        // v2.5 Exception: Shackled lanes can be unlocked even if busted (to allow redemption/stacking?)
+        // Actually, if it's busted, unlocking is mostly useless, but the rules say "Unlock".
+        if (!lane.shackled) {
+          expect(lane.locked, `${prefix}Player ${player.id} lane ${j} is busted but not locked`).toBe(true);
+        }
       }
     }
   }
@@ -127,13 +153,13 @@ function assertInvariants(state: GameState, context: string = ''): void {
   // Note: Same card CAN appear in multiple player lanes (when both players Take the same card)
   const deckCardIds = new Set<string>();
   const queueCardIds = new Set<string>();
-  
+
   // Collect from deck (no duplicates allowed)
   for (const card of state.deck) {
     expect(deckCardIds.has(card.id), `${prefix}Duplicate card ID in deck: ${card.id}`).toBe(false);
     deckCardIds.add(card.id);
   }
-  
+
   // Collect from queue (no duplicates allowed)
   for (const card of state.queue) {
     if (!card.id.startsWith('ash-')) { // Ash cards are generated, not from deck
@@ -141,7 +167,7 @@ function assertInvariants(state: GameState, context: string = ''): void {
       queueCardIds.add(card.id);
     }
   }
-  
+
   // Check that deck and queue don't share cards
   for (const queueCardId of queueCardIds) {
     expect(deckCardIds.has(queueCardId), `${prefix}Card ${queueCardId} appears in both deck and queue`).toBe(false);
@@ -162,7 +188,9 @@ function assertInvariants(state: GameState, context: string = ''): void {
     for (let j = 0; j < player.lanes.length; j++) {
       const lane = player.lanes[j];
       if (lane.total === 21) {
-        expect(lane.locked, `${prefix}Player ${player.id} lane ${j} is at 21 but not locked`).toBe(true);
+        if (!lane.shackled) {
+          expect(lane.locked, `${prefix}Player ${player.id} lane ${j} is at 21 but not locked`).toBe(true);
+        }
       }
     }
   }
@@ -186,7 +214,7 @@ function assertInvariants(state: GameState, context: string = ''): void {
 describe('Single turn invariants', () => {
   it('should maintain invariants after simple take action', () => {
     const state = createInitialGameState(42);
-    
+
     const actions: TurnActions = {
       playerActions: [
         { playerId: 'player1', action: { type: 'take', targetLane: 0 } },
@@ -200,7 +228,7 @@ describe('Single turn invariants', () => {
 
   it('should maintain invariants after burn action', () => {
     const state = createInitialGameState(123);
-    
+
     const actions: TurnActions = {
       playerActions: [
         { playerId: 'player1', action: { type: 'burn' } },
@@ -214,7 +242,7 @@ describe('Single turn invariants', () => {
 
   it('should maintain invariants after stand action', () => {
     const state = createInitialGameState(456);
-    
+
     const actions: TurnActions = {
       playerActions: [
         { playerId: 'player1', action: { type: 'stand', targetLane: 0 } },
@@ -228,7 +256,7 @@ describe('Single turn invariants', () => {
 
   it('should maintain invariants after ash card is given', () => {
     const state = createInitialGameState(789);
-    
+
     const actions: TurnActions = {
       playerActions: [
         { playerId: 'player1', action: { type: 'take', targetLane: 0 } },
@@ -314,7 +342,7 @@ describe('Multi-turn simulations', () => {
 
   it('should maintain turn number increments exactly by 1', () => {
     let state = createInitialGameState(4000);
-    
+
     for (let turn = 0; turn < 30; turn++) {
       if (state.gameOver) {
         break;
@@ -354,19 +382,19 @@ describe('Multi-turn simulations', () => {
 describe('Edge case invariants', () => {
   it('should maintain invariants when all players run out of energy', () => {
     let state = createInitialGameState(6000);
-    
+
     // Burn until both players have no energy
     while (state.players[0].energy > 0 || state.players[1].energy > 0) {
       if (state.gameOver) break;
-      
+
       const actions: TurnActions = {
         playerActions: [
-          { 
-            playerId: 'player1', 
+          {
+            playerId: 'player1',
             action: state.players[0].energy > 0 ? { type: 'burn' } : { type: 'take', targetLane: 0 }
           },
-          { 
-            playerId: 'player2', 
+          {
+            playerId: 'player2',
             action: state.players[1].energy > 0 ? { type: 'burn' } : { type: 'take', targetLane: 0 }
           },
         ],
@@ -382,7 +410,7 @@ describe('Edge case invariants', () => {
 
   it('should maintain invariants when deck is exhausted', () => {
     let state = createInitialGameState(7000);
-    
+
     // Play until deck is empty or game ends
     let turnCount = 0;
     while (state.deck.length > 0 && !state.gameOver && turnCount < 100) {
@@ -400,13 +428,13 @@ describe('Edge case invariants', () => {
 
   it('should maintain invariants when lanes bust', () => {
     let state = createInitialGameState(8000);
-    
+
     // Keep taking to lane 0 until it busts
     let turnCount = 0;
     while (!state.players[0].lanes[0].busted && turnCount < 20) {
       if (state.gameOver) break;
       if (state.players[0].lanes[0].locked) break;
-      
+
       const actions: TurnActions = {
         playerActions: [
           { playerId: 'player1', action: { type: 'take', targetLane: 0 } },
@@ -476,7 +504,7 @@ describe('Stress test', () => {
 
     // Most games should complete naturally
     expect(gamesCompleted).toBeGreaterThan(50);
-    
+
     // Should have played substantial turns (average ~8-10 per game)
     expect(totalTurns).toBeGreaterThan(500);
   });

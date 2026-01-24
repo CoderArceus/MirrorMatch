@@ -12,10 +12,9 @@
  */
 
 import { getLegalActions } from './validators';
-import { resolveTurn } from './resolveTurn';
 import { getCardBaseValue } from './state';
 import { getDecisivenessScore } from './analytics';
-import type { GameState, PlayerAction, TurnActions } from './types';
+import type { GameState, PlayerAction } from './types';
 
 // ============================================================================
 // Heuristic Weights
@@ -135,7 +134,7 @@ interface ScoringConfig {
 
   // Strategic Multipliers
   SECOND_LANE_WIN_BONUS: number; // Bonus for securing 2nd lane (match win)
-  
+
   // DAY 21: Decisiveness tuning bonuses
   EXCLUSIVE_THREAT_BONUS?: number; // Reward creating win threats opponent doesn't have
   LANE_CLOSURE_BONUS?: number; // Reward locking strong lanes (≥18)
@@ -192,7 +191,7 @@ const HARD_CONFIG: ScoringConfig = {
   LOCK_WEAK_LANE_PENALTY: -300,
 
   SECOND_LANE_WIN_BONUS: 800, // Increased to push for match wins
-  
+
   // DAY 21: Decisiveness tuning
   EXCLUSIVE_THREAT_BONUS: 400, // Reward asymmetric pressure creation
   LANE_CLOSURE_BONUS: 350, // Reward finishing strong lanes
@@ -337,6 +336,82 @@ function scoreAction(
       score += config.PASS_PENALTY;
       break;
     }
+
+    case 'bid': {
+      // Bidding Logic
+      // Higher bid = more likely to win, but costs energy
+      // Winning prevents Void Stone (bad)
+
+      // Simple heuristic: 
+      // - Losing (getting Void Stone) is bad (~ -200)
+      // - Winning is neutral/good (0)
+      // - Cost subtracts from score
+
+      // We don't know opponent bid, assuming random distribution or rational?
+      // Assume opponent bids 1 or 2 often.
+
+      const bid = action.bidAmount;
+      const energyAfter = player.energy - bid;
+
+      // Penalty for low energy
+      if (energyAfter < 1) score += config.ENERGY_CONSERVATION;
+
+      // Reward for higher bid (probabilistic win)
+      // Value of winning approx 200 (avoiding shackle)
+      // Prob win ~ sigmoid(bid) ?
+      // 0 -> 10%
+      // 1 -> 40%
+      // 2 -> 80%
+      let winProb = 0.1;
+      if (bid === 1) winProb = 0.4;
+      if (bid >= 2) winProb = 0.9;
+
+      const expectedValue = (winProb * 0) + ((1 - winProb) * -200);
+      score += expectedValue;
+
+      // Void Stone Placement Logic (Secondary)
+      // We want to place Void Stone on a lane that is:
+      // - Already weak/dead
+      // - Empty
+      // - Not our strong lane
+      const targetLaneIdx = action.potentialVoidStoneLane;
+      const lane = player.lanes[targetLaneIdx];
+
+      if (lane.locked) {
+        // Can't place on locked?? Actually logic says "If lane was locked -> unlocked".
+        // So placing on a BAD locked lane (low score) gives second chance!
+        // This is GOOD.
+        if (lane.total < 17) score += 100; // Second chance!
+        else score -= 100; // Don't unlock a winning lane!
+      } else {
+        // Open lane
+        if (lane.total === 0) score += 50; // Safe place
+        else if (lane.total >= 18) score -= 150; // Don't shackle high lane
+      }
+
+      break;
+    }
+
+    case 'blind_hit': {
+      // Blind Hit Logic
+      // High variance. Card value unknown (avg ~7).
+      // Costs Overheat.
+
+      const targetLane = player.lanes[action.targetLane];
+      const avgCardVal = 7;
+      const projectedTotal = targetLane.total + avgCardVal;
+
+      // Similar to Take logic but with penalty for uncertainty & overheat cost
+      if (projectedTotal > 21) score += config.BUST_PENALTY; // Likely bust
+      else if (projectedTotal >= 18 && projectedTotal <= 21) score += config.TOTAL_18_20;
+      else score += -50; // Uncertainty penalty
+
+      // Overheat cost
+      score -= 50;
+
+      // Only do it if standard options are terrible (handled by relative scoring)
+      break;
+    }
   }
 
   return score;
@@ -391,7 +466,7 @@ function chooseScoredAction(
   }));
 
   scored.sort((a, b) => b.score - a.score);
-  
+
   // DAY 20: Deterministic tie-breaking to break perfect_symmetry
   // When multiple actions have the same best score, break ties by player ID
   return breakTie(scored, playerId);
@@ -437,12 +512,12 @@ function breakTie(
     if (a.action.type !== b.action.type) {
       return a.action.type.localeCompare(b.action.type);
     }
-    
+
     // For actions with targetLane, sort by lane index
     if ('targetLane' in a.action && 'targetLane' in b.action) {
       return a.action.targetLane - b.action.targetLane;
     }
-    
+
     // Otherwise maintain current order
     return 0;
   });
@@ -451,7 +526,7 @@ function breakTie(
   // Player 1 (alphabetically first) → pick first
   // Player 2 (alphabetically last) → pick last
   const isPlayer1 = playerId === 'player1' || playerId < 'player2';
-  
+
   if (isPlayer1) {
     return sortedTies[0].action; // First tied action
   } else {

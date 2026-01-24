@@ -8,8 +8,14 @@
  * Validation happens BEFORE resolution. If an action is illegal, it never resolves.
  */
 
-import { GameState, PlayerState } from './types';
-import { PlayerAction } from './actions';
+import type { GameState, PlayerState } from './types';
+import type { PlayerAction } from './actions';
+
+// ============================================================================
+// Constants
+// ============================================================================
+
+const AUCTION_TURNS = [4, 8];
 
 /**
  * Returns all legal actions for a player in the current game state
@@ -42,6 +48,23 @@ export function getLegalActions(
 
   const legalActions: PlayerAction[] = [];
 
+  // Check for Dark Auction turns
+  if (AUCTION_TURNS.includes(state.turnNumber)) {
+    // In auction turns, ONLY BidAction is legal
+    // Players can bid 0 to their current energy
+    for (let bid = 0; bid <= player.energy; bid++) {
+      // Must specify a valid lane for the Void Stone if they lose
+      for (let i = 0; i < player.lanes.length; i++) {
+        legalActions.push({
+          type: 'bid',
+          bidAmount: bid,
+          potentialVoidStoneLane: i
+        });
+      }
+    }
+    return legalActions;
+  }
+
   // Check all TAKE actions
   if (state.queue.length > 0) {
     for (let i = 0; i < player.lanes.length; i++) {
@@ -52,14 +75,34 @@ export function getLegalActions(
   }
 
   // Check BURN action
-  if (state.queue.length > 0 && player.energy > 0) {
+  // Must have energy AND not be overheated
+  if (state.queue.length > 0 && player.energy > 0 && player.overheat === 0) {
     legalActions.push({ type: 'burn' });
   }
 
   // Check all STAND actions
   for (let i = 0; i < player.lanes.length; i++) {
-    if (!player.lanes[i].locked) {
-      legalActions.push({ type: 'stand', targetLane: i });
+    // If lane is shackled, can only stand if total >= 20
+    const lane = player.lanes[i];
+    if (!lane.locked) {
+      if (lane.shackled) {
+        if (lane.total >= 20) {
+          legalActions.push({ type: 'stand', targetLane: i });
+        }
+      } else {
+        legalActions.push({ type: 'stand', targetLane: i });
+      }
+    }
+  }
+
+  // Check BLIND HIT actions (v2.5)
+  // Legal if: Lane is Shackled, Lane not locked, Deck has cards
+  if (state.deck.length > 0) {
+    for (let i = 0; i < player.lanes.length; i++) {
+      const lane = player.lanes[i];
+      if (lane.shackled && !lane.locked) {
+        legalActions.push({ type: 'blind_hit', targetLane: i });
+      }
     }
   }
 
@@ -96,23 +139,29 @@ export function isActionLegal(
   action: PlayerAction
 ): boolean {
   const legalActions = getLegalActions(state, playerId);
-  
+
   // For pass actions, check if it's the ONLY legal action
   if (action.type === 'pass') {
     return legalActions.length === 1 && legalActions[0].type === 'pass';
   }
-  
+
   // For other actions, check if it exists in the legal actions list
   return legalActions.some(legalAction => {
     if (legalAction.type !== action.type) {
       return false;
     }
-    
+
     // For actions with targetLane, check the lane matches
     if ('targetLane' in action && 'targetLane' in legalAction) {
       return action.targetLane === legalAction.targetLane;
     }
-    
+
+    // For BidAction, check bidAmount and potentialVoidStoneLane
+    if (action.type === 'bid' && legalAction.type === 'bid') {
+      return action.bidAmount === legalAction.bidAmount &&
+        action.potentialVoidStoneLane === legalAction.potentialVoidStoneLane;
+    }
+
     // For actions without targetLane (burn, pass), type match is sufficient
     return true;
   });
@@ -130,7 +179,7 @@ export function isActionLegal(
  * - Whether taking would bust the lane (resolution handles this)
  * - What the opponent is doing
  */
-function isTakeLegal(
+export function isTakeLegal(
   state: GameState,
   player: PlayerState,
   targetLane: number
@@ -165,7 +214,7 @@ function isTakeLegal(
  * - What the opponent is doing
  * - Whether burning is strategically smart
  */
-function isBurnLegal(
+export function isBurnLegal(
   state: GameState,
   player: PlayerState
 ): boolean {
@@ -195,7 +244,7 @@ function isBurnLegal(
  * - Whether standing is strategically smart
  * - What the opponent is doing
  */
-function isStandLegal(
+export function isStandLegal(
   player: PlayerState,
   targetLane: number
 ): boolean {

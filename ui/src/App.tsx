@@ -22,10 +22,10 @@ import type {
   GameState,
   PlayerAction,
   TurnActions,
-  LaneState,
   DrawReason,
-  SkillBadge,
-  AIDifficulty
+  AIDifficulty,
+  BidAction,
+  BlindHitAction
 } from '../../engine/src';
 import { getMatchFromURL, createShareableURL } from './utils/encodeMatch';
 import type { EncodedMatch } from './utils/encodeMatch';
@@ -105,6 +105,9 @@ function loadStats(): SessionStats {
       equal_lanes: 0,
       tiebreaker_equal: 0,
       deck_exhausted: 0,
+      mutual_pass: 0,
+      lane_split: 0,
+      stall_equilibrium: 0,
     }
   };
 }
@@ -167,9 +170,7 @@ function saveReplay(replay: Replay): void {
   localStorage.setItem(REPLAYS_KEY, JSON.stringify(replays));
 }
 
-function clearReplays(): void {
-  localStorage.removeItem(REPLAYS_KEY);
-}
+
 
 // ============================================================================
 // Feedback System: Quick 1-Click Capture
@@ -184,32 +185,13 @@ function saveFeedback(feedback: Feedback): void {
   localStorage.setItem(FEEDBACK_KEY, JSON.stringify(feedbacks));
 }
 
-function loadFeedback(): Feedback[] {
-  const stored = localStorage.getItem(FEEDBACK_KEY);
-  return stored ? JSON.parse(stored) : [];
-}
 
-function clearFeedback(): void {
-  localStorage.removeItem(FEEDBACK_KEY);
-}
 
 // ============================================================================
 // Replay Engine: Deterministic State Reconstruction
 // ============================================================================
 
-function replayGame(seed: number, actions: TurnActions[]): GameState {
-  let state = createInitialGameState(seed);
 
-  for (const turnActions of actions) {
-    state = resolveTurn(state, turnActions);
-
-    if (state.gameOver) {
-      break;
-    }
-  }
-
-  return state;
-}
 
 // ============================================================================
 // Game Over Explanation
@@ -242,6 +224,171 @@ function replayGame(seed: number, actions: TurnActions[]): GameState {
 
 
 function App() {
+  // ============================================================================
+  // Dynamic Action Rendering Components
+  // ============================================================================
+
+  // Auction Controls Component
+  const AuctionControls = ({
+    onSubmit,
+    activePlayer,
+    gameState
+  }: {
+    bidActions?: BidAction[];
+    onSubmit: (action: PlayerAction) => void;
+    activePlayer: 'player1' | 'player2';
+    gameState: GameState;
+  }) => {
+    const [bidAmount, setBidAmount] = useState(0);
+    const [voidStoneLane, setVoidStoneLane] = useState(0);
+
+    const player = gameState.players.find(p => p.id === activePlayer)!;
+    const maxBid = player.energy;
+
+    const handleSubmit = () => {
+      const action: BidAction = {
+        type: 'bid',
+        bidAmount,
+        potentialVoidStoneLane: voidStoneLane
+      };
+      onSubmit(action);
+    };
+
+    return (
+      <div className="auction-controls">
+        <div className="bid-input-group">
+          <label>
+            <strong>Your Bid (0-{maxBid} energy)</strong>
+            <input
+              type="number"
+              min={0}
+              max={maxBid}
+              value={bidAmount}
+              onChange={(e) => setBidAmount(Math.max(0, Math.min(maxBid, parseInt(e.target.value) || 0)))}
+              className="bid-input"
+            />
+          </label>
+        </div>
+
+        <div className="void-stone-lane-group">
+          <label>
+            <strong>Void Stone Target (if you lose)</strong>
+            <div className="lane-buttons">
+              {[0, 1, 2].map(lane => (
+                <button
+                  key={lane}
+                  onClick={() => setVoidStoneLane(lane)}
+                  className={`lane-select-btn ${voidStoneLane === lane ? 'selected' : ''}`}
+                >
+                  Lane {String.fromCharCode(65 + lane)}
+                </button>
+              ))}
+            </div>
+          </label>
+        </div>
+
+        <button onClick={handleSubmit} className="submit-bid-btn">
+          Submit Bid
+        </button>
+
+        <p className="auction-hint">
+          💡 Higher bid = more likely to win. Winner pays bid. Loser gets shackled lane.
+        </p>
+      </div>
+    );
+  };
+
+  // Helper: Render actions dynamically based on engine truth
+  const renderDynamicActions = () => {
+    const legalActions = getLegalActions(gameState, activePlayer);
+
+    // Group actions by type
+    const takeActions = legalActions.filter(a => a.type === 'take') as { type: 'take'; targetLane: number }[];
+    const burnAction = legalActions.find(a => a.type === 'burn');
+    const standActions = legalActions.filter(a => a.type === 'stand') as { type: 'stand'; targetLane: number }[];
+    const blindHitActions = legalActions.filter(a => a.type === 'blind_hit') as BlindHitAction[];
+    const bidActions = legalActions.filter(a => a.type === 'bid') as BidAction[];
+
+    // Auction Turn: Show bid controls
+    if (bidActions.length > 0) {
+      return <AuctionControls onSubmit={selectAction} activePlayer={activePlayer} gameState={gameState} />;
+    }
+
+    return (
+      <div className="actions">
+        {/* Take Actions */}
+        {takeActions.length > 0 && (
+          <div className="action-group">
+            <h4>Take (add card to lane)</h4>
+            <div className="lane-buttons">
+              {takeActions.map(action => (
+                <button
+                  key={action.targetLane}
+                  onClick={() => selectAction(action)}
+                  className="action-btn"
+                >
+                  Lane {String.fromCharCode(65 + action.targetLane)}
+                </button>
+              ))}
+            </div>
+          </div>
+        )}
+
+        {/* Burn Action */}
+        {burnAction && (
+          <div className="action-group">
+            <h4>Burn (destroy front card)</h4>
+            <button
+              onClick={() => selectAction(burnAction)}
+              className="action-btn burn"
+            >
+              🔥 Burn (1 energy)
+            </button>
+          </div>
+        )}
+
+        {/* Stand Actions */}
+        {standActions.length > 0 && (
+          <div className="action-group">
+            <h4>Stand (lock lane)</h4>
+            <div className="lane-buttons">
+              {standActions.map(action => (
+                <button
+                  key={action.targetLane}
+                  onClick={() => selectAction(action)}
+                  className="action-btn stand"
+                >
+                  Lane {String.fromCharCode(65 + action.targetLane)}
+                </button>
+              ))}
+            </div>
+          </div>
+        )}
+
+        {/* Blind Hit Actions */}
+        {blindHitActions.length > 0 && (
+          <div className="action-group">
+            <h4>Blind Hit (random card from deck)</h4>
+            <p className="blind-hit-warning">⚠️ Desperation move: Draws random card. Causes 2-turn overheat.</p>
+            <div className="lane-buttons">
+              {blindHitActions.map(action => (
+                <button
+                  key={action.targetLane}
+                  onClick={() => selectAction(action)}
+                  className="action-btn blind-hit"
+                >
+                  Lane {String.fromCharCode(65 + action.targetLane)} (Shackled)
+                </button>
+              ))}
+            </div>
+          </div>
+        )}
+      </div>
+    );
+  };
+
+  // End of inner component definitions
+  // ============================================================================
   // Async PvP: Load match from URL if present
   const urlMatch = getMatchFromURL();
   const initialSeed = urlMatch?.seed || Date.now();
@@ -593,13 +740,14 @@ function App() {
   };
 
   // Render a single lane
-  const renderLane = (lane: typeof player1.lanes[0], laneIndex: number, playerName: string) => {
+  const renderLane = (lane: typeof player1.lanes[0], laneIndex: number) => {
     const statusClass = lane.busted ? 'lane-busted' : lane.locked ? 'lane-locked' : '';
 
     return (
-      <div key={laneIndex} className={`lane ${statusClass}`}>
+      <div key={laneIndex} className={`lane ${statusClass} ${lane.shackled ? 'lane-shackled' : ''}`}>
         <div className="lane-header">
           Lane {String.fromCharCode(65 + laneIndex)} {/* A, B, C */}
+          {lane.shackled && ' ⛓️'}
         </div>
         <div className="lane-total">
           {lane.total}
@@ -628,9 +776,12 @@ function App() {
         <div className="player-header">
           <h2>{playerName}</h2>
           <div className="energy">⚡ Energy: {player.energy}</div>
+          {player.overheat > 0 && (
+            <div className="overheat">🔥 Overheat: {player.overheat}</div>
+          )}
         </div>
         <div className="lanes">
-          {player.lanes.map((lane, idx) => renderLane(lane, idx, playerName))}
+          {player.lanes.map((lane, idx) => renderLane(lane, idx))}
         </div>
         {pendingActions[player.id as 'player1' | 'player2'] && (
           <div className="pending-action">
@@ -720,6 +871,14 @@ function App() {
               </button>
             )}
           </div>
+
+          {/* Auction Phase Banner */}
+          {!gameState.gameOver && [4, 8].includes(gameState.turnNumber) && (
+            <div className="auction-banner">
+              <h2>🎯 DARK AUCTION</h2>
+              <p>Bid energy for a powerful card. Loser gets Void Stone (shackled lane).</p>
+            </div>
+          )}
         </div>
 
         {/* AREA 2: Player Lanes */}
@@ -777,50 +936,8 @@ function App() {
                       )}
                     </div>
 
-                    <div className="actions">
-                      <div className="action-group">
-                        <h4>Take (add card to lane)</h4>
-                        <div className="lane-buttons">
-                          {[0, 1, 2].map(lane => (
-                            <button
-                              key={lane}
-                              onClick={() => selectAction({ type: 'take', targetLane: lane })}
-                              disabled={!checkLegal({ type: 'take', targetLane: lane })}
-                              className="action-btn"
-                            >
-                              Lane {String.fromCharCode(65 + lane)}
-                            </button>
-                          ))}
-                        </div>
-                      </div>
-
-                      <div className="action-group">
-                        <h4>Burn (destroy front card)</h4>
-                        <button
-                          onClick={() => selectAction({ type: 'burn' })}
-                          disabled={!checkLegal({ type: 'burn' })}
-                          className="action-btn burn"
-                        >
-                          🔥 Burn (1 energy)
-                        </button>
-                      </div>
-
-                      <div className="action-group">
-                        <h4>Stand (lock lane)</h4>
-                        <div className="lane-buttons">
-                          {[0, 1, 2].map(lane => (
-                            <button
-                              key={lane}
-                              onClick={() => selectAction({ type: 'stand', targetLane: lane })}
-                              disabled={!checkLegal({ type: 'stand', targetLane: lane })}
-                              className="action-btn stand"
-                            >
-                              Lane {String.fromCharCode(65 + lane)}
-                            </button>
-                          ))}
-                        </div>
-                      </div>
-                    </div>
+                    {/* Dynamic action rendering based on getLegalActions */}
+                    {renderDynamicActions()}
                   </>
                 )}
               </>
@@ -830,8 +947,9 @@ function App() {
 
         {/* Game Over Panel */}
         {gameState.gameOver && (
-          <div className="game-over-panel">
-            <div className="game-over-header">
+          <div className="game-container">
+            {urlError && <div className="error-banner">{urlError}</div>}
+            <div className="turn-header">
               <h2>🏁 Game Over</h2>
               {gameState.winner ? (
                 <div className="winner-announcement">

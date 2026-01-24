@@ -8,8 +8,8 @@
  * Replays prove determinism: same seed + same actions = same outcome.
  */
 
-import { GameState } from './types';
-import { TurnActions } from './actions';
+import type { GameState } from './types';
+import type { TurnActions } from './actions';
 import { resolveTurn } from './resolveTurn';
 
 /**

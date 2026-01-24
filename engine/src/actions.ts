@@ -63,9 +63,28 @@ export interface PassAction {
 }
 
 /**
+ * Action: Blind Hit (v2.5)
+ * Draw from remaining deck to a shackled lane
+ */
+export interface BlindHitAction {
+  readonly type: 'blind_hit';
+  readonly targetLane: number;
+}
+
+/**
+ * Action: Bid (v2.5 Dark Auction)
+ * Bid energy for a prize; loser gets Void Stone
+ */
+export interface BidAction {
+  readonly type: 'bid';
+  readonly bidAmount: number;
+  readonly potentialVoidStoneLane: number; // Where to put Void Stone if lost
+}
+
+/**
  * Union type for all possible player actions
  */
-export type PlayerAction = TakeAction | BurnAction | StandAction | PassAction;
+export type PlayerAction = TakeAction | BurnAction | StandAction | PassAction | BlindHitAction | BidAction;
 
 // ============================================================================
 // Turn Actions

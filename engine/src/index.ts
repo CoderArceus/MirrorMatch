@@ -22,6 +22,8 @@ export type {
   BurnAction,
   StandAction,
   PassAction,
+  BidAction,
+  BlindHitAction,
 } from './actions';
 
 // Replay types

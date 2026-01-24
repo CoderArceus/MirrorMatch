@@ -43,6 +43,7 @@ export interface LaneState {
   readonly total: number; // Cached sum of card values (Aces optimally counted as 1 or 11)
   readonly locked: boolean; // true if lane hit 21, busted, or was Stood
   readonly busted: boolean; // true if total > 21
+  readonly shackled: boolean; // true if lane lost Dark Auction (v2.5)
 }
 
 // ============================================================================
@@ -58,6 +59,7 @@ export interface LaneState {
 export interface PlayerState {
   readonly id: string; // Unique player identifier
   readonly energy: number; // Energy available for Burn actions (starts at 3, never derived)
+  readonly overheat: number; // Turns remaining until Burn is legal again (v2.5)
   readonly lanes: ReadonlyArray<LaneState>; // Array of lanes (default 3 for standard mode)
 }
 
@@ -81,53 +83,4 @@ export interface GameState {
   readonly winner: string | null; // Player ID of winner, or null if draw/ongoing
 }
 
-// ============================================================================
-// Player Actions
-// ============================================================================
-
-/**
- * Action: Take the front card from the queue
- */
-export interface TakeAction {
-  readonly type: 'take';
-  readonly targetLane: number; // Lane index (0-based). Runtime validation required.
-}
-
-/**
- * Action: Burn (destroy) the front card from the queue
- */
-export interface BurnAction {
-  readonly type: 'burn';
-}
-
-/**
- * Action: Stand (permanently lock) a lane
- */
-export interface StandAction {
-  readonly type: 'stand';
-  readonly targetLane: number; // Lane index (0-based). Runtime validation required.
-}
-
-/**
- * Action: Pass (do nothing this turn)
- */
-export interface PassAction {
-  readonly type: 'pass';
-}
-
-/**
- * Union type for all possible player actions
- */
-export type PlayerAction = TakeAction | BurnAction | StandAction | PassAction;
-
-// ============================================================================
-// Turn Actions
-// ============================================================================
-
-/**
- * Represents the simultaneous actions of both players for a single turn
- */
-export interface TurnActions {
-  readonly player1Action: PlayerAction;
-  readonly player2Action: PlayerAction;
-}
+export * from './actions';

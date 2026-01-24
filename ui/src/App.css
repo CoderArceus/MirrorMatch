@@ -135,8 +135,15 @@ body {
 }
 
 @keyframes pulse {
-  0%, 100% { opacity: 1; }
-  50% { opacity: 0.7; }
+
+  0%,
+  100% {
+    opacity: 1;
+  }
+
+  50% {
+    opacity: 0.7;
+  }
 }
 
 /* AREA 2: Players */
@@ -568,9 +575,17 @@ body {
 }
 
 @keyframes badgeBounce {
-  0% { transform: scale(0); }
-  50% { transform: scale(1.2); }
-  100% { transform: scale(1); }
+  0% {
+    transform: scale(0);
+  }
+
+  50% {
+    transform: scale(1.2);
+  }
+
+  100% {
+    transform: scale(1);
+  }
 }
 
 .badge-earned {
@@ -881,4 +896,220 @@ body {
   .game-container {
     max-width: 900px;
   }
+}
+
+/* ============================================================================ */
+/* v2.5 Visual Indicators & Controls */
+/* ============================================================================ */
+
+/* Overheat Indicator */
+.overheat {
+  color: #ff6b35;
+  font-weight: bold;
+  font-size: 0.9rem;
+  margin-top: 0.25rem;
+}
+
+/* Shackled Lane Indicator */
+.lane-header {
+  display: flex;
+  align-items: center;
+  gap: 0.25rem;
+}
+
+/* Shackled Lane Styling */
+.lane-shackled {
+  background: #3a2e3d;
+  /* Dark purple/grey tint */
+  border-color: #764ba2;
+  position: relative;
+  overflow: hidden;
+}
+
+.lane-shackled::before {
+  content: "⛓️ SHACKLED";
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%) rotate(-45deg);
+  font-size: 24px;
+  font-weight: bold;
+  color: rgba(0, 0, 0, 0.2);
+  pointer-events: none;
+  z-index: 0;
+}
+
+.lane-shackled .lane-header {
+  color: #c0a0e0;
+}
+
+
+/* Dark Auction Banner */
+.auction-banner {
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  background-size: 200% 200%;
+  animation: gradientFlow 5s ease infinite;
+  color: white;
+  padding: 1.5rem;
+  margin: 1rem 0;
+  border-radius: 8px;
+  text-align: center;
+  box-shadow: 0 4px 15px rgba(118, 75, 162, 0.4);
+}
+
+@keyframes gradientFlow {
+  0% {
+    background-position: 0% 50%;
+  }
+
+  50% {
+    background-position: 100% 50%;
+  }
+
+  100% {
+    background-position: 0% 50%;
+  }
+}
+
+.auction-banner h2 {
+  margin: 0 0 0.5rem 0;
+  font-size: 1.8rem;
+  text-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+}
+
+.auction-banner p {
+  margin: 0;
+  font-size: 1rem;
+  opacity: 0.95;
+}
+
+/* Auction Controls */
+.auction-controls {
+  background: #f7f7f7;
+  border: 2px solid #667eea;
+  border-radius: 8px;
+  padding: 1.5rem;
+  margin: 1rem 0;
+}
+
+.bid-input-group {
+  margin-bottom: 1.5rem;
+}
+
+.bid-input-group label {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+}
+
+.bid-input {
+  width: 120px;
+  padding: 0.5rem;
+  font-size: 1.2rem;
+  text-align: center;
+  border: 2px solid #667eea;
+  border-radius: 4px;
+  font-weight: bold;
+}
+
+.bid-input:focus {
+  outline: none;
+  border-color: #5568d3;
+  box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+}
+
+.void-stone-lane-group {
+  margin-top: 1rem;
+}
+
+.void-stone-lane-group label {
+  display: block;
+}
+
+.void-stone-lane-group strong {
+  display: block;
+  margin-bottom: 0.5rem;
+}
+
+.lane-select-btn {
+  padding: 0.5rem 1rem;
+  margin: 0.25rem;
+  border: 2px solid #ccc;
+  background: white;
+  cursor: pointer;
+  border-radius: 4px;
+  font-weight: 500;
+  transition: all 0.2s ease;
+}
+
+.lane-select-btn:hover {
+  border-color: #667eea;
+  background: #f0f3ff;
+}
+
+.lane-select-btn.selected {
+  background: #667eea;
+  color: white;
+  border-color: #667eea;
+}
+
+.submit-bid-btn {
+  width: 100%;
+  padding: 1rem;
+  margin-top: 1rem;
+  background: #667eea;
+  color: white;
+  border: none;
+  border-radius: 4px;
+  font-size: 1.2rem;
+  font-weight: bold;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  box-shadow: 0 4px 6px rgba(102, 126, 234, 0.3);
+}
+
+.submit-bid-btn:hover {
+  background: #5568d3;
+  transform: translateY(-2px);
+  box-shadow: 0 6px 12px rgba(102, 126, 234, 0.4);
+
+}
+
+.submit-bid-btn:active {
+  transform: translateY(1px);
+}
+
+.auction-hint {
+  margin-top: 1rem;
+  font-style: italic;
+  color: #666;
+  text-align: center;
+  font-size: 0.9rem;
+}
+
+/* Blind Hit Controls */
+.blind-hit-warning {
+  font-size: 0.85rem;
+  color: #ff6b35;
+  font-style: italic;
+  margin: 0.5rem 0;
+  padding: 0.5rem;
+  background: #fff5f2;
+  border-left: 3px solid #ff6b35;
+  border-radius: 4px;
+}
+
+.action-btn.blind-hit {
+  background: #ff6b35;
+  color: white;
+  border-color: #ff6b35;
+}
+
+.action-btn.blind-hit:hover:not(:disabled) {
+  background: #e85a25;
+  border-color: #e85a25;
+}
+
+.action-btn.blind-hit:active:not(:disabled) {
+  background: #d14915;
 }

@@ -1,11 +1,9 @@
 /**
  * MirrorMatch: Strategic 21 - Analytics Module
  * Pure functions for analyzing game outcomes, explaining results, and detecting achievements.
- * 
- * Moved from UI to Engine to centralize domain logic.
  */
 
-import { GameState, LaneState } from './types';
+import type { GameState, LaneState } from './types';
 
 // ============================================================================
 // Types
@@ -59,21 +57,21 @@ export interface DecisivenessMetrics {
      * Lower = more decisive
      */
     contestableLanes: number;
-    
+
     /**
      * Player's remaining energy at game end
      * Range: 0-3
      * Lower = more decisive (forced commitment)
      */
     energyRemaining: number;
-    
+
     /**
      * Number of PassActions taken by this player
      * Counted from action history (not inferred)
      * Higher = less pressure/fewer options
      */
     forcedPasses: number;
-    
+
     /**
      * Number of lanes where player was within ≤3 points of 21
      * without being busted, before game end
@@ -95,12 +93,12 @@ export interface DrawDiagnostics {
      * From analyzeDrawReason()
      */
     reason: DrawReason;
-    
+
     /**
      * Player 1's decisiveness metrics at game end
      */
     p1: DecisivenessMetrics;
-    
+
     /**
      * Player 2's decisiveness metrics at game end
      */
@@ -121,30 +119,30 @@ export interface DrawStatistics {
      * Total number of draws analyzed
      */
     totalDraws: number;
-    
+
     /**
      * Count of draws by reason type
      * All DrawReason enum values present (default 0)
      */
     byReason: Record<DrawReason, number>;
-    
+
     /**
      * Average contestable lanes across all draws (both players)
      * Range: 0-3
      */
     avgContestableLanes: number;
-    
+
     /**
      * Average energy remaining across all draws (both players)
      * Range: 0-3
      */
     avgEnergyRemaining: number;
-    
+
     /**
      * Average forced passes across all draws (both players)
      */
     avgForcedPasses: number;
-    
+
     /**
      * Average win threats across all draws (both players)
      * Range: 0-3
@@ -710,7 +708,7 @@ export function getDecisivenessMetrics(
     actionLog?: ReadonlyArray<{ playerId: string; action: { type: string } }>
 ): DecisivenessMetrics {
     const playerIndex = state.players.findIndex(p => p.id === playerId);
-    
+
     if (playerIndex === -1) {
         return {
             contestableLanes: 0,
@@ -797,11 +795,11 @@ export function analyzeDrawDiagnostics(
 ): DrawDiagnostics {
     // Get draw reason using existing function
     const reason = analyzeDrawReason(state);
-    
+
     // Get decisiveness metrics for both players
     const p1 = getDecisivenessMetrics(state, player1Id, actionLog);
     const p2 = getDecisivenessMetrics(state, player2Id, actionLog);
-    
+
     return {
         reason,
         p1,
@@ -884,7 +882,7 @@ export function aggregateDrawStatistics(
     // Calculate averages
     // ========================================================================
     // For each draw: average p1 and p2, then average across all draws
-    
+
     let totalContestableLanes = 0;
     let totalEnergyRemaining = 0;
     let totalForcedPasses = 0;

@@ -8,9 +8,11 @@
  * Resolution follows a strict order to prevent bugs and ensure determinism.
  */
 
-import { GameState, Card, LaneState, PlayerState } from './types';
-import { TurnActions, PlayerAction } from './actions';
+import type { GameState, Card, LaneState, PlayerState } from './types';
+import type { TurnActions, PlayerAction, BidAction } from './actions';
 import { calculateLaneTotal } from './state';
+
+const AUCTION_TURNS = [4, 8];
 
 /**
  * Resolves a single turn, transitioning from one game state to the next
@@ -42,6 +44,13 @@ export function resolveTurn(
   actions: TurnActions
 ): GameState {
   // ============================================================================
+  // STEP 0: Special Turn Handling (Dark Auction)
+  // ============================================================================
+  if (AUCTION_TURNS.includes(state.turnNumber)) {
+    return resolveAuctionTurn(state, actions);
+  }
+
+  // ============================================================================
   // STEP 1: Early exit if game is already over
   // ============================================================================
   if (state.gameOver) {
@@ -71,6 +80,30 @@ export function resolveTurn(
   );
 
   // ============================================================================
+  // STEP 3.5: Resolve Blind Hits (v2.5) & Deck Draws
+  // ============================================================================
+  // Blind Hits happen independently of the queue interaction
+  let newDeck = [...state.deck];
+
+  // Resolve P1 Blind Hit
+  let p1BlindCard: Card | null = null;
+  if (player1Action.type === 'blind_hit') {
+    if (newDeck.length > 0) {
+      p1BlindCard = newDeck[0];
+      newDeck = newDeck.slice(1);
+    }
+  }
+
+  // Resolve P2 Blind Hit
+  let p2BlindCard: Card | null = null;
+  if (player2Action.type === 'blind_hit') {
+    if (newDeck.length > 0) {
+      p2BlindCard = newDeck[0];
+      newDeck = newDeck.slice(1);
+    }
+  }
+
+  // ============================================================================
   // STEP 4: Apply card effects (add cards to lanes)
   // ============================================================================
   let newPlayers = [...state.players];
@@ -93,6 +126,22 @@ export function resolveTurn(
     );
   }
 
+  // Apply Blind Hit cards
+  if (p1BlindCard && player1Action.type === 'blind_hit') {
+    newPlayers[0] = addCardToPlayerLane(
+      newPlayers[0],
+      p1BlindCard,
+      player1Action.targetLane
+    );
+  }
+  if (p2BlindCard && player2Action.type === 'blind_hit') {
+    newPlayers[1] = addCardToPlayerLane(
+      newPlayers[1],
+      p2BlindCard,
+      player2Action.targetLane
+    );
+  }
+
   // Apply energy costs
   newPlayers[0] = {
     ...newPlayers[0],
@@ -102,6 +151,20 @@ export function resolveTurn(
     ...newPlayers[1],
     energy: newPlayers[1].energy - interaction.player2EnergyCost,
   };
+
+  // Apply energy gains (v2.5)
+  // +1 for Take->Ash interaction (Consolation)
+  if (interaction.player1ConsolationEnergy) {
+    newPlayers[0] = { ...newPlayers[0], energy: Math.min(5, newPlayers[0].energy + 1) };
+  }
+  if (interaction.player2ConsolationEnergy) {
+    newPlayers[1] = { ...newPlayers[1], energy: Math.min(5, newPlayers[1].energy + 1) };
+  }
+
+  // Apply Overheat (v2.5)
+  // Costs + Decay
+  newPlayers[0] = resolveOverheat(newPlayers[0], player1Action);
+  newPlayers[1] = resolveOverheat(newPlayers[1], player2Action);
 
   // ============================================================================
   // STEP 5: Apply STAND actions (lock lanes)
@@ -119,11 +182,22 @@ export function resolveTurn(
   newPlayers[0] = resolveLaneBustsAndLocks(newPlayers[0]);
   newPlayers[1] = resolveLaneBustsAndLocks(newPlayers[1]);
 
+  // Apply energy gain for natural 21 (v2.5)
+  // We need to know if 21 happened THIS turn.
+  // We can infer it: if locked AND total==21 AND wasn't locked before?
+  // Actually, resolveLaneBustsAndLocks handles locking.
+  // Let's modify resolveLaneBustsAndLocks to return energy gain flag or handle it there.
+  // For MVP refactor minimal diff: Check logic separately or enhance helper.
+  // Better: Check newly locked 21s.
+  newPlayers[0] = checkAndApply21EnergyBonus(state.players[0], newPlayers[0]);
+  newPlayers[1] = checkAndApply21EnergyBonus(state.players[1], newPlayers[1]);
+
   // ============================================================================
   // STEP 7: Refill queue (maintain size = 3)
   // ============================================================================
+  // newDeck is already updated from Blind Hits
   let newQueue = [...state.queue];
-  let newDeck = [...state.deck];
+  // let newDeck = [...state.deck]; // newDeck is already updated from Blind Hits
 
   // Remove front card if it was consumed
   if (interaction.cardConsumed) {
@@ -179,6 +253,8 @@ interface InteractionResult {
   player2Card: Card | null; // Card to give player 2 (null if none)
   player2TargetLane: number | null; // Lane for player 2's card
   player2EnergyCost: number; // Energy cost for player 2
+  player1ConsolationEnergy: boolean; // P1 gets +1 energy (Ash Consolation)
+  player2ConsolationEnergy: boolean; // P2 gets +1 energy (Ash Consolation)
 }
 
 /**
@@ -211,9 +287,13 @@ function resolveInteractionMatrix(
     player2Card: null,
     player2TargetLane: null,
     player2EnergyCost: 0,
+    player1ConsolationEnergy: false,
+    player2ConsolationEnergy: false,
   };
 
   // Handle non-queue actions (Stand and Pass don't interact with queue)
+  // Blind Hit also doesn't interact with queue directly here (handled in resolveTurn)
+  // Bid is not valid here (checked in step 0)
   const p1InteractsWithQueue = player1Action.type === 'take' || player1Action.type === 'burn';
   const p2InteractsWithQueue = player2Action.type === 'take' || player2Action.type === 'burn';
 
@@ -255,15 +335,17 @@ function resolveInteractionMatrix(
     result.player1Card = createAshCard(state.turnNumber, player1Id);
     result.player1TargetLane = (player1Action as any).targetLane;
     result.player2EnergyCost = 1;
+    result.player1ConsolationEnergy = true; // Consolation Logic
     return result;
   }
 
-  // Case 4: Burn vs Take - Card destroyed, Taker gets Ash
-  if (p1Type === 'burn' && p2Type === 'take') {
+  // P1 Burns vs P2 Take (Reversed)
+  if (player1Action.type === 'burn' && player2Action.type === 'take') {
     result.cardConsumed = true;
     result.player1EnergyCost = 1;
     result.player2Card = createAshCard(state.turnNumber, player2Id);
     result.player2TargetLane = (player2Action as any).targetLane;
+    result.player2ConsolationEnergy = true; // Consolation Logic
     return result;
   }
 
@@ -511,4 +593,179 @@ function compareLanes(lane1: LaneState, lane2: LaneState): 0 | 1 | 2 {
 
   // Equal totals = tie
   return 0;
+}
+
+/**
+ * Resolves Dark Auction Logic (Turn 4 & 8)
+ */
+function resolveAuctionTurn(state: GameState, actions: TurnActions): GameState {
+  const p1Action = actions.playerActions.find(pa => pa.playerId === state.players[0].id)?.action as BidAction;
+  const p2Action = actions.playerActions.find(pa => pa.playerId === state.players[1].id)?.action as BidAction;
+
+  if (!p1Action || p1Action.type !== 'bid' || !p2Action || p2Action.type !== 'bid') {
+    // Should never happen if validated
+    return state;
+  }
+
+  let newPlayers = [...state.players];
+  const p1Bid = p1Action.bidAmount;
+  const p2Bid = p2Action.bidAmount;
+
+  let loserIndex = -1;
+  let winnerIndex = -1;
+
+  if (p1Bid > p2Bid) {
+    // P1 Wins
+    winnerIndex = 0;
+    loserIndex = 1;
+  } else if (p2Bid > p1Bid) {
+    // P2 Wins
+    winnerIndex = 1;
+    loserIndex = 0;
+  } else {
+    // Tie: Leader's Burden (Higher board score loses)
+    const p1Score = calculateTotalBoardScore(newPlayers[0]);
+    const p2Score = calculateTotalBoardScore(newPlayers[1]);
+
+    if (p1Score > p2Score) {
+      loserIndex = 0;
+      winnerIndex = 1;
+    } else if (p2Score > p1Score) {
+      loserIndex = 1;
+      winnerIndex = 0;
+    } else {
+      // Deterministic fallback (Player lexicographic)
+      // PlayerIds are player1, player2. player2 > player1 lexicographically?
+      // "player1" < "player2". 
+      // Rule: "Use deterministic player ordering". Usually ID order.
+      // Let's say Player 1 wins tie if all else equal.
+      winnerIndex = 0;
+      loserIndex = 1;
+    }
+  }
+
+  // Apply results
+  // Winner pays bid
+  newPlayers[winnerIndex] = {
+    ...newPlayers[winnerIndex],
+    energy: newPlayers[winnerIndex].energy - (winnerIndex === 0 ? p1Bid : p2Bid),
+  };
+
+  // Loser pays 0, gets Void Stone
+  const loserAction = loserIndex === 0 ? p1Action : p2Action;
+  const voidLaneIndex = loserAction.potentialVoidStoneLane;
+  newPlayers[loserIndex] = applyVoidStone(newPlayers[loserIndex], voidLaneIndex, state.turnNumber);
+
+  return {
+    ...state,
+    players: newPlayers,
+    turnNumber: state.turnNumber + 1, // Advance turn
+    // Auctions don't trigger game over (usually)
+  };
+}
+
+function calculateTotalBoardScore(player: PlayerState): number {
+  return player.lanes.reduce((sum, lane) => sum + (lane.busted ? 0 : lane.total), 0);
+}
+
+function applyVoidStone(player: PlayerState, laneIndex: number, _turn: number): PlayerState {
+  const newLanes = [...player.lanes];
+  const lane = newLanes[laneIndex];
+
+  // Create Void Stone card logic? Or just Shackle?
+  // PRD: "receives a Void Stone and must place it on any lane... Lane becomes Shackled"
+  // Does Void Stone have a card value? "Scores 0 unless final total is 20 or 21".
+  // It's likely a modifier status, or a special card.
+  // "Shackled Lanes Rules ... Scores 0 unless..."
+  // Let's implement Void Stone as a CARD if it needs to occupy a slot, or just state.
+  // PRD says "receive a Void Stone... place it".
+  // Let's add a Void Stone card with rank 'VOID' (special) or usage.
+  // But `LaneState` has `shackled` boolean. That might be enough.
+  // Let's set shackled = true.
+  // And if it acts as a card visually, we might need a dummy card.
+  // For now, implementing mechanism: shackled = true.
+  // Also "If lane was locked -> it becomes unlocked".
+
+  newLanes[laneIndex] = {
+    ...lane,
+    shackled: true,
+    locked: false, // Unlock if locked
+    // Optionally add a visual "Void Stone" card if UI needs it, strictly backend state is `shackled`.
+  };
+
+  return {
+    ...player,
+    lanes: newLanes,
+  };
+}
+
+/**
+ * Resolves Overheat decay and costs
+ */
+function resolveOverheat(player: PlayerState, action: PlayerAction): PlayerState {
+  let newOverheat = player.overheat;
+
+  // Decay at end of turn (before applying new costs? or after?)
+  // "Overheat decreases at end of each turn"
+  if (newOverheat > 0) {
+    newOverheat--;
+  }
+
+  // Apply costs
+  if (action.type === 'blind_hit') {
+    // "Adds Overheat +2. If no Overheat: Set to 2."
+    // "If player already has Overheat: Overheat duration increased by 2"
+    // Wait, if it decayed above, we add 2 to the decayed value?
+    // Or do we add cost first then decay?
+    // "decreases at END of each turn". Logic flow usually: Action -> Cost -> End Phase (Decay).
+    // So: Value + Cost - 1.
+    // Let's revert the decay for a moment or adjust logic.
+    // Let's say we do: apply cost, then decay.
+    // But `resolveOverheat` is called once.
+
+    // Original value
+    const currentStart = player.overheat;
+    let nextVal = currentStart;
+
+    if (currentStart > 0) {
+      nextVal += 2;
+    } else {
+      nextVal = 2;
+    }
+
+    // Decay
+    if (nextVal > 0) {
+      nextVal--;
+    }
+    newOverheat = nextVal;
+  }
+
+  return {
+    ...player,
+    overheat: newOverheat,
+  };
+}
+
+function checkAndApply21EnergyBonus(oldPlayer: PlayerState, newPlayer: PlayerState): PlayerState {
+  // Check if any lane HIT 21 this turn
+  // Logic: Old lane total != 21 AND New lane total == 21 ==> Bonus
+  // Also clamp at 5.
+
+  let bonus = 0;
+  for (let i = 0; i < 3; i++) {
+    const oldLane = oldPlayer.lanes[i];
+    const newLane = newPlayer.lanes[i];
+
+    if (oldLane.total !== 21 && newLane.total === 21) {
+      bonus++;
+    }
+  }
+
+  if (bonus > 0) {
+    return {
+      ...newPlayer,
+      energy: Math.min(5, newPlayer.energy + bonus)
+    };
+  }
+  return newPlayer;
 }

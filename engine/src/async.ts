@@ -15,8 +15,8 @@
  * - The game progresses deterministically
  */
 
-import { GameState, PlayerAction } from './types';
-import { TurnActions } from './actions';
+import type { GameState, PlayerAction } from './types';
+import type { TurnActions } from './actions';
 import { resolveTurn } from './resolveTurn';
 import { isActionLegal, getLegalActions } from './validators';
 import { createInitialGameState } from './state';
@@ -91,7 +91,7 @@ export interface AsyncMatch {
 export function replayAsyncMatch(match: AsyncMatch): GameState {
   // Start with initial state
   let state = createInitialGameState(match.seed);
-  
+
   // Override player IDs to match the async match
   state = {
     ...state,
@@ -103,7 +103,7 @@ export function replayAsyncMatch(match: AsyncMatch): GameState {
 
   // Replay completed actions in pairs (each turn needs both players)
   const actionLog = match.actionLog;
-  
+
   for (let i = 0; i < actionLog.length; i += 2) {
     // Safety: should always have pairs, but handle edge case
     if (i + 1 >= actionLog.length) {
@@ -328,7 +328,7 @@ export function getAsyncMatchStatus(
 ): AsyncMatchStatus {
   // Reconstruct current state via replay
   const currentState = replayAsyncMatch(match);
-  
+
   const isYourTurn = match.nextPlayerId === playerId;
   const legalActions = isYourTurn && !currentState.gameOver
     ? getLegalActions(currentState, playerId)
@@ -375,7 +375,7 @@ export function verifyAsyncMatch(match: AsyncMatch): boolean {
 
     // Attempt replay - if it throws, match is invalid
     const state = replayAsyncMatch(match);
-    
+
     // Verify state is valid
     return (
       state.players.length === 2 &&

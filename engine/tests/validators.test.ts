@@ -22,6 +22,7 @@ function createTestLane(locked: boolean = false, busted: boolean = false, cards:
     total: 0, // Simplified for testing - validators don't check totals
     locked,
     busted,
+    shackled: false,
   };
 }
 
@@ -29,6 +30,7 @@ function createTestPlayer(id: string, energy: number, lanes: LaneState[]): Playe
   return {
     id,
     energy,
+    overheat: 0,
     lanes,
   };
 }

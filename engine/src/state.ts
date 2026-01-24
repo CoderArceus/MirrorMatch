@@ -7,7 +7,7 @@
  * Never manually mutate cards[] without recalculating total using calculateLaneTotal().
  */
 
-import { Card, GameState, LaneState, PlayerState } from './types';
+import type { Card, GameState, LaneState, PlayerState } from './types';
 
 // ============================================================================
 // Deterministic RNG (Mulberry32)
@@ -138,6 +138,7 @@ function createEmptyLane(): LaneState {
     total: 0,
     locked: false,
     busted: false,
+    shackled: false,
   };
 }
 
@@ -151,6 +152,7 @@ function createInitialPlayer(id: string): PlayerState {
   return {
     id,
     energy: 2, // Starting energy for Burn actions (reduced from 3 for balance)
+    overheat: 0,
     lanes: [createEmptyLane(), createEmptyLane(), createEmptyLane()],
   };
 }

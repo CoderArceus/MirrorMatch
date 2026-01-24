@@ -16,6 +16,7 @@ function createLane(total: number, locked: boolean, busted: boolean = false): La
     total,
     locked,
     busted,
+    shackled: false,
   };
 }
 
@@ -24,6 +25,7 @@ function createPlayer(id: string, energy: number, lanes: LaneState[]): PlayerSta
   return {
     id,
     energy,
+    overheat: 0,
     lanes,
   };
 }
@@ -104,7 +106,7 @@ describe('Pass Action - Engine Contract', () => {
       };
 
       const actions = getLegalActions(state, 'p1');
-      
+
       // Should have take(0), burn, stand(0) - NO pass
       expect(actions.length).toBeGreaterThan(1);
       expect(actions.some(a => a.type === 'pass')).toBe(false);
@@ -187,7 +189,7 @@ describe('Pass Action - Engine Contract', () => {
 
       // Pass should be illegal when other actions exist
       expect(isActionLegal(state, 'p1', { type: 'pass' })).toBe(false);
-      
+
       // But other actions should be legal
       expect(isActionLegal(state, 'p1', { type: 'take', targetLane: 0 })).toBe(true);
       expect(isActionLegal(state, 'p1', { type: 'burn' })).toBe(true);
@@ -227,13 +229,13 @@ describe('Pass Action - Engine Contract', () => {
 
       // Game should not be over (only p1 passed, deck still has cards)
       expect(newState.gameOver).toBe(false);
-      
+
       // Turn should advance
       expect(newState.turnNumber).toBe(6);
-      
+
       // P2 should have received the card
       expect(newState.players[1].lanes[0].cards).toHaveLength(1);
-      
+
       // P1 should be unchanged (all lanes were already locked)
       expect(newState.players[0].lanes).toEqual(state.players[0].lanes);
     });
@@ -270,10 +272,10 @@ describe('Pass Action - Engine Contract', () => {
 
       // Game MUST be over when both pass
       expect(newState.gameOver).toBe(true);
-      
+
       // Winner should be determined
       expect(newState.winner).toBe('p1');
-      
+
       // Turn should advance
       expect(newState.turnNumber).toBe(11);
     });
@@ -345,10 +347,10 @@ describe('Pass Action - Engine Contract', () => {
 
       // P2's lane should be locked
       expect(newState.players[1].lanes[1].locked).toBe(true);
-      
+
       // Queue should be unchanged (no interaction)
       expect(newState.queue).toEqual(state.queue);
-      
+
       // Game continues
       expect(newState.gameOver).toBe(false);
     });
@@ -397,10 +399,10 @@ describe('Pass Action - Engine Contract', () => {
         };
 
         const nextState = resolveTurn(currentState, actions);
-        
+
         // Contract: state must change
         expect(nextState.turnNumber).toBeGreaterThan(currentState.turnNumber);
-        
+
         currentState = nextState;
         iterations++;
       }

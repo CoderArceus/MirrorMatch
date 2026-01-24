@@ -20,17 +20,19 @@ function createTestLane(
   cards: Card[] = [],
   total: number = 0,
   locked: boolean = false,
-  busted: boolean = false
+  busted: boolean = false,
+  shackled: boolean = false
 ): LaneState {
-  return { cards, total, locked, busted };
+  return { cards, total, locked, busted, shackled };
 }
 
 function createTestPlayer(
   id: string,
   energy: number,
-  lanes: LaneState[]
+  lanes: LaneState[],
+  overheat: number = 0
 ): PlayerState {
-  return { id, energy, lanes };
+  return { id, energy, overheat, lanes };
 }
 
 function createTestGameState(
@@ -229,8 +231,9 @@ describe('Core interaction matrix', () => {
       expect(newState.players[1].lanes[1].cards).toHaveLength(0);
       expect(newState.players[1].lanes[2].cards).toHaveLength(0);
 
-      // P1 energy unchanged, P2 loses 1
-      expect(newState.players[0].energy).toBe(3);
+      // P1 energy unchanged (3), P2 loses 1 (2) -> Actually P1 gets Consolation (+1) so 3->4 (capped at 5)
+      // Wait, initial is 3. +1 = 4.
+      expect(newState.players[0].energy).toBe(4);
       expect(newState.players[1].energy).toBe(2);
 
       // Card consumed from queue
@@ -270,9 +273,9 @@ describe('Core interaction matrix', () => {
       expect(newState.players[0].lanes[1].cards).toHaveLength(0);
       expect(newState.players[0].lanes[2].cards).toHaveLength(0);
 
-      // P1 loses energy, P2 unchanged
+      // P1 loses energy (3->2), P2 unchanged (3) -> Actually P2 gets Consolation (+1) so 3->4
       expect(newState.players[0].energy).toBe(2);
-      expect(newState.players[1].energy).toBe(3);
+      expect(newState.players[1].energy).toBe(4);
     });
 
     it('should create unique Ash card IDs for traceability', () => {

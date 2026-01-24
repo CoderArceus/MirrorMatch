@@ -22,17 +22,19 @@ function createTestLane(
   cards: Card[] = [],
   total: number = 0,
   locked: boolean = false,
-  busted: boolean = false
+  busted: boolean = false,
+  shackled: boolean = false
 ): LaneState {
-  return { cards, total, locked, busted };
+  return { cards, total, locked, busted, shackled };
 }
 
 function createTestPlayer(
   id: string,
   energy: number,
-  lanes: LaneState[]
+  lanes: LaneState[],
+  overheat: number = 0
 ): PlayerState {
-  return { id, energy, lanes };
+  return { id, energy, overheat, lanes };
 }
 
 function createTestGameState(
@@ -143,7 +145,7 @@ describe('Simple replay', () => {
 
     // Verify energy
     expect(finalState.players[0].energy).toBe(2); // Used 1 for burn
-    expect(finalState.players[1].energy).toBe(3); // No burns
+    expect(finalState.players[1].energy).toBe(4); // No burns + 1 Consolation
   });
 
   it('should handle empty replay (no turns)', () => {
