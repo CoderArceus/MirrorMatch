@@ -732,6 +732,9 @@ function App() {
   const [submissionStatus, setSubmissionStatus] = useState<'none' | 'submitting' | 'success' | 'failed'>('none');
   const [lastAttemptedAction, setLastAttemptedAction] = useState<PlayerAction | null>(null);
   const [isRestoring, setIsRestoring] = useState<boolean>(false);
+  
+  // Day 35: Share match functionality
+  const [shareToast, setShareToast] = useState<boolean>(false);
 
   const player1 = gameState.players[0];
   const player2 = gameState.players[1];
@@ -801,6 +804,24 @@ function App() {
     document.addEventListener('keydown', handleKeyDown);
     return () => document.removeEventListener('keydown', handleKeyDown);
   }, [asyncMode]);
+
+  // Day 35: Share match functionality
+  const shareMatch = () => {
+    const currentUrl = window.location.href;
+    navigator.clipboard.writeText(currentUrl).then(() => {
+      setShareToast(true);
+      setTimeout(() => setShareToast(false), 3000);
+    }).catch(() => {
+      alert('Failed to copy link. Please copy manually: ' + currentUrl);
+    });
+  };
+
+  const scrollToHistory = () => {
+    const historyElement = document.querySelector('.move-history');
+    if (historyElement) {
+      historyElement.scrollIntoView({ behavior: 'smooth' });
+    }
+  };
 
   // Record game stats and replay when it ends (only once)
   useEffect(() => {
@@ -1165,6 +1186,63 @@ function App() {
   return (
     <div className="app">
       <div className="game-container">
+        {/* Day 35: Post-Game Closure Panel */}
+        {asyncMode && gameState.gameOver && (
+          <div className="match-closure-panel dark-panel">
+            <div className="closure-header">
+              <h2>🏁 Match Complete</h2>
+            </div>
+            <div className="closure-content">
+              <div className="outcome-section">
+                {gameState.winner === myPlayerRole ? (
+                  <div className="outcome-label win">Victory</div>
+                ) : gameState.winner === null ? (
+                  <div className="outcome-label draw">Draw</div>
+                ) : (
+                  <div className="outcome-label loss">Defeat</div>
+                )}
+                <div className="outcome-explanation">
+                  {gameState.winner === myPlayerRole
+                    ? 'You won more lanes than your opponent'
+                    : gameState.winner === null
+                    ? 'Both players won an equal number of lanes'
+                    : 'Your opponent won more lanes'}
+                </div>
+                <div className="final-stats">
+                  Final turn: {gameState.turnNumber - 1}
+                </div>
+              </div>
+              
+              <div className="closure-actions">
+                <button onClick={shareMatch} className="share-btn">
+                  📤 Share Match
+                </button>
+                <button onClick={scrollToHistory} className="view-history-btn">
+                  📜 View Full History
+                </button>
+                <button
+                  onClick={() => window.location.href = window.location.origin}
+                  className="new-match-btn"
+                >
+                  ✨ Start New Match
+                </button>
+              </div>
+              
+              <div className="share-subtext">
+                Anyone with the match link can replay the full game
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* Day 35: Share Toast */}
+        {shareToast && (
+          <div className="share-toast dark-panel">
+            <span className="toast-icon">✓</span>
+            <span>Match link copied to clipboard</span>
+          </div>
+        )}
+
         {/* Day 30: Match Entry Clarity Banner */}
         {asyncMode && !gameState.gameOver && (
           <div className={`match-entry-banner ${isMyTurn ? 'your-turn' : 'waiting'} ${pendingActions[myPlayerRole] ? 'action-submitted' : ''}`}>
@@ -1612,8 +1690,8 @@ function App() {
 
         {/* Day 27: Turn Resolution Summary + Auction Transparency */}
         {actionHistory.length > 0 && (
-          <div className="move-history dark-panel">
-            <h3>📜 Turn History</h3>
+          <div className={`move-history dark-panel ${asyncMode && gameState.gameOver ? 'final-state' : ''}`}>
+            <h3>📜 {asyncMode && gameState.gameOver ? 'Complete Match History' : 'Turn History'}</h3>
 
             {/* Day 32: Move History Invariants - Verification */}
             {(() => {

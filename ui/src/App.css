@@ -1156,6 +1156,150 @@ body {
   text-align: center;
 }
 
+/* Day 35: Async Match Closure & Share UX */
+
+/* Match Closure Panel */
+.match-closure-panel {
+  margin: 20px;
+  padding: 32px;
+  text-align: center;
+}
+
+.closure-header h2 {
+  margin: 0 0 24px 0;
+  font-size: 1.8rem;
+  color: rgba(255, 255, 255, 0.95);
+}
+
+.outcome-section {
+  margin-bottom: 32px;
+}
+
+.outcome-label {
+  font-size: 2rem;
+  font-weight: 700;
+  padding: 12px 24px;
+  border-radius: 12px;
+  display: inline-block;
+  margin-bottom: 16px;
+}
+
+.outcome-label.win {
+  background: rgba(76, 175, 80, 0.2);
+  color: #4caf50;
+  border: 2px solid #4caf50;
+}
+
+.outcome-label.loss {
+  background: rgba(244, 67, 54, 0.2);
+  color: #f44336;
+  border: 2px solid #f44336;
+}
+
+.outcome-label.draw {
+  background: rgba(255, 152, 0, 0.2);
+  color: #ff9800;
+  border: 2px solid #ff9800;
+}
+
+.outcome-explanation {
+  color: rgba(255, 255, 255, 0.8);
+  font-size: 1.1rem;
+  margin-bottom: 12px;
+}
+
+.final-stats {
+  color: rgba(255, 255, 255, 0.6);
+  font-size: 0.95rem;
+}
+
+.closure-actions {
+  display: flex;
+  gap: 16px;
+  justify-content: center;
+  flex-wrap: wrap;
+  margin-bottom: 20px;
+}
+
+.share-btn,
+.view-history-btn,
+.new-match-btn {
+  padding: 14px 24px;
+  border: none;
+  border-radius: 8px;
+  font-size: 1rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.share-btn {
+  background: #2196f3;
+  color: white;
+}
+
+.share-btn:hover {
+  background: #1976d2;
+  transform: scale(1.05);
+}
+
+.view-history-btn {
+  background: rgba(255, 255, 255, 0.1);
+  color: rgba(255, 255, 255, 0.9);
+  border: 2px solid rgba(255, 255, 255, 0.2);
+}
+
+.view-history-btn:hover {
+  background: rgba(255, 255, 255, 0.15);
+  transform: scale(1.05);
+}
+
+.new-match-btn {
+  background: #4caf50;
+  color: white;
+}
+
+.new-match-btn:hover {
+  background: #45a049;
+  transform: scale(1.05);
+}
+
+.share-subtext {
+  color: rgba(255, 255, 255, 0.5);
+  font-size: 0.85rem;
+  font-style: italic;
+}
+
+/* Share Toast */
+.share-toast {
+  position: fixed;
+  top: 80px;
+  right: 20px;
+  z-index: 200;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 12px 20px;
+  background: rgba(33, 150, 243, 0.95);
+  border: 1px solid #2196f3;
+  animation: fadeInOut 3s ease-in-out;
+}
+
+.toast-icon {
+  font-size: 1.2rem;
+  color: white;
+}
+
+/* Move History Final State */
+.move-history.final-state {
+  opacity: 0.95;
+  pointer-events: none;
+}
+
+.move-history.final-state .history-turn {
+  cursor: default;
+}
+
 /* Day 34: Async Reliability Feedback & Trust Polish */
 
 /* Restoring Match Banner */
