@@ -904,6 +904,29 @@ function App() {
         {/* AREA 4 & 5: Action Controls */}
         {!gameState.gameOver && (
           <div className="controls-section">
+            {/* Day 24: Turn & State Clarity */}
+            {asyncMode && (
+              <div className="async-state-indicator">
+                <div className={`turn-status ${isMyTurn ? 'your-turn' : 'opponent-turn'}`}>
+                  {isMyTurn ? (
+                    <>
+                      <span className="status-icon">✓</span>
+                      <span className="status-text">Your Turn</span>
+                      {pendingActions[myPlayerRole] && (
+                        <span className="action-submitted">• Action Submitted</span>
+                      )}
+                    </>
+                  ) : (
+                    <>
+                      <span className="status-icon">⏳</span>
+                      <span className="status-text">Opponent's Turn</span>
+                      <span className="waiting-hint">• Waiting for {activePlayer === 'player1' ? 'Player 1' : 'Player 2'}</span>
+                    </>
+                  )}
+                </div>
+              </div>
+            )}
+
             {/* Async Mode: Waiting for Opponent */}
             {asyncMode && !isMyTurn && (
               <div className="waiting-for-opponent">
@@ -1053,32 +1076,100 @@ function App() {
           </div>
         )}
 
-        {/* Async PvP: Share Challenge Link */}
-        {asyncMode && !gameState.gameOver && isMyTurn && (
-          <div className="share-challenge">
-            <button
-              onClick={() => {
-                // Determine next player
-                const nextPlayer: 'player1' | 'player2' = activePlayer === 'player1' ? 'player2' : 'player1';
-                const match: EncodedMatch = {
-                  seed: gameSeed,
-                  actions: actionHistory,
-                  pendingActions: pendingActions, // Include pending actions
-                  currentPlayer: nextPlayer,
-                  version: 1,
-                };
-                const url = createShareableURL(match);
-                navigator.clipboard.writeText(url).then(() => {
-                  alert(`Challenge link copied! Send it to ${nextPlayer === 'player1' ? 'Player 1' : 'Player 2'}.`);
-                }).catch(() => {
-                  prompt('Copy this link:', url);
-                });
-              }}
-              className="share-btn"
-            >
-              📋 Copy Challenge Link
-            </button>
-            <p className="share-hint">Share this link after making your move</p>
+        {/* Day 24: Move History Preview */}
+        {asyncMode && actionHistory.length > 0 && (
+          <div className="move-history">
+            <h3>📜 Move History</h3>
+            <div className="move-history-list">
+              {actionHistory.map((turnActions, turnIndex) => (
+                <div key={turnIndex} className="history-turn">
+                  <div className="history-turn-number">Turn {turnIndex + 1}</div>
+                  <div className="history-actions">
+                    {turnActions.playerActions.map((pa) => {
+                      const action = pa.action;
+                      let actionDesc = '';
+                      
+                      if (action.type === 'take') {
+                        actionDesc = `Take → Lane ${String.fromCharCode(65 + action.targetLane)}`;
+                      } else if (action.type === 'burn') {
+                        actionDesc = 'Burn';
+                      } else if (action.type === 'stand') {
+                        actionDesc = `Stand Lane ${String.fromCharCode(65 + action.targetLane)}`;
+                      } else if (action.type === 'pass') {
+                        actionDesc = 'Pass';
+                      } else if (action.type === 'bid') {
+                        actionDesc = `Bid ${action.bidAmount}`;
+                      } else if (action.type === 'blind_hit') {
+                        actionDesc = `Blind Hit → Lane ${String.fromCharCode(65 + action.targetLane)}`;
+                      }
+                      
+                      return (
+                        <div key={pa.playerId} className="history-action">
+                          <span className="history-player">{pa.playerId === 'player1' ? 'P1' : 'P2'}:</span>
+                          <span className="history-action-desc">{actionDesc}</span>
+                        </div>
+                      );
+                    })}
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
+
+        {/* Day 24: Smart Match Hub - Persistent URL display */}
+        {asyncMode && (
+          <div className="match-hub">
+            <h3>📋 {gameState.gameOver ? 'Final Match Result' : 'Your Match Link'}</h3>
+            <div className="match-hub-content">
+              <div className="match-url-display">
+                <input
+                  type="text"
+                  value={(() => {
+                    // Auto-generate current match URL
+                    const nextPlayer: 'player1' | 'player2' = activePlayer === 'player1' ? 'player2' : 'player1';
+                    const match: EncodedMatch = {
+                      seed: gameSeed,
+                      actions: actionHistory,
+                      pendingActions: pendingActions,
+                      currentPlayer: nextPlayer,
+                      version: 1,
+                    };
+                    return createShareableURL(match);
+                  })()}
+                  readOnly
+                  className="match-url-input"
+                />
+              </div>
+              <button
+                onClick={() => {
+                  const nextPlayer: 'player1' | 'player2' = activePlayer === 'player1' ? 'player2' : 'player1';
+                  const match: EncodedMatch = {
+                    seed: gameSeed,
+                    actions: actionHistory,
+                    pendingActions: pendingActions,
+                    currentPlayer: nextPlayer,
+                    version: 1,
+                  };
+                  const url = createShareableURL(match);
+                  navigator.clipboard.writeText(url).then(() => {
+                    alert(gameState.gameOver 
+                      ? 'Final match link copied! Share this to show the result.'
+                      : 'Match link copied to clipboard!');
+                  }).catch(() => {
+                    prompt('Copy this link:', url);
+                  });
+                }}
+                className="copy-link-btn"
+              >
+                📋 {gameState.gameOver ? 'Share Result' : 'Copy Link'}
+              </button>
+              <p className="match-hub-hint">
+                {gameState.gameOver 
+                  ? '🏁 Share this link with your opponent to show the final result.'
+                  : '💡 This link updates automatically. Share anytime to let your opponent see the current game state.'}
+              </p>
+            </div>
           </div>
         )}
 
