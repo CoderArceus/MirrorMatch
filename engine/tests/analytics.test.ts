@@ -619,11 +619,11 @@ describe('Draw Analysis (Day 18)', () => {
     // ========================================================================
 
     describe('energyRemaining metric', () => {
-      it('should return 3 energy at game start', () => {
+      it('should return 2 energy at game start', () => {
         const state = createInitialGameState(42);
         const metrics = getDecisivenessMetrics(state, 'player1');
 
-        expect(metrics.energyRemaining).toBe(3);
+        expect(metrics.energyRemaining).toBe(2);
       });
 
       it('should return 0 energy when depleted', () => {

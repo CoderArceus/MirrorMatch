@@ -143,11 +143,14 @@ function createEmptyLane(): LaneState {
 
 /**
  * Creates initial player state
+ * 
+ * DAY 19: Energy reduced from 3 → 2 to break perfect_symmetry draws
+ * Forces earlier irreversible commitment via energy scarcity
  */
 function createInitialPlayer(id: string): PlayerState {
   return {
     id,
-    energy: 3, // Starting energy for Burn actions
+    energy: 2, // Starting energy for Burn actions (reduced from 3 for balance)
     lanes: [createEmptyLane(), createEmptyLane(), createEmptyLane()],
   };
 }

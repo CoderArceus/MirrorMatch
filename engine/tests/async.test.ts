@@ -173,8 +173,8 @@ describe('Async PvP System', () => {
       // Alice should get an Ash card (value 1)
       expect(state.players[0].lanes[0].cards).toHaveLength(1);
       expect(state.players[0].lanes[0].cards[0].rank).toBe('ASH');
-      // Bob should have spent energy
-      expect(state.players[1].energy).toBe(2);
+      // Bob should have spent energy (starts with 2, spends 1, has 1 left)
+      expect(state.players[1].energy).toBe(1);
     });
 
     it('should handle stand actions correctly', () => {
