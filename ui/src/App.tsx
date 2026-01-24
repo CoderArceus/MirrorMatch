@@ -22,18 +22,7 @@ import { recordGame } from './utils/storage';
 import './App.css';
 
 // Production constants
-const APP_VERSION = '2.5';
 const MAX_REPLAY_TURNS = 100;
-const IS_PRODUCTION = import.meta.env.PROD;
-const GITHUB_URL = 'https://github.com/CoderArceus/Seque';
-
-// Disable console in production (except errors)
-if (IS_PRODUCTION) {
-  console.log = () => {};
-  console.info = () => {};
-  console.debug = () => {};
-  console.warn = () => {};
-}
 
 // Error Boundary Component
 interface ErrorBoundaryProps {
@@ -326,23 +315,16 @@ function AppContent() {
   // Fatal error screen
   if (mode === 'error' && fatalError) {
     return (
-      <>
-        <div className="fatal-error-screen">
-          <div className="error-panel">
-            <div className="error-icon">⚠️</div>
-            <h1>Match Load Failed</h1>
-            <p>{fatalError}</p>
-            <button className="error-btn" onClick={resetGame}>
-              Return to Home
-            </button>
-          </div>
+      <div className="fatal-error-screen">
+        <div className="error-panel">
+          <div className="error-icon">⚠️</div>
+          <h1>Match Load Failed</h1>
+          <p>{fatalError}</p>
+          <button className="error-btn" onClick={resetGame}>
+            Return to Home
+          </button>
         </div>
-        <footer className="app-footer">
-          <span>Seque v{APP_VERSION}</span>
-          <span className="footer-sep">·</span>
-          <a href={GITHUB_URL} target="_blank" rel="noopener noreferrer">GitHub</a>
-        </footer>
-      </>
+      </div>
     );
   }
 
@@ -404,19 +386,6 @@ function AppContent() {
           <span>🔗 Share URL copied! Send to opponent.</span>
         </div>
       )}
-
-      {/* Version Footer */}
-      <footer className="app-footer">
-        <span>Seque v{APP_VERSION}</span>
-        <span className="footer-sep">·</span>
-        <span>Open-Source</span>
-        <span className="footer-sep">·</span>
-        <span>Deterministic</span>
-        <span className="footer-sep">·</span>
-        <span>No Server Storage</span>
-        <span className="footer-sep">·</span>
-        <a href={GITHUB_URL} target="_blank" rel="noopener noreferrer">GitHub</a>
-      </footer>
     </>
   );
 }

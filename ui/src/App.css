@@ -335,38 +335,6 @@ input:focus, select:focus, textarea:focus {
   animation: fadeIn var(--transition-normal);
 }
 
-/* Version Footer */
-.app-footer {
-  position: fixed;
-  bottom: 0;
-  left: 0;
-  right: 0;
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  gap: var(--sp-2);
-  padding: var(--sp-2);
-  font-size: 0.7rem;
-  font-family: var(--font-mono);
-  color: var(--text-disabled);
-  z-index: 1;
-  pointer-events: auto;
-}
-
-.app-footer a {
-  color: var(--text-muted);
-  text-decoration: none;
-  transition: color var(--transition-fast);
-}
-
-.app-footer a:hover {
-  color: var(--blue);
-}
-
-.footer-sep {
-  opacity: 0.5;
-}
-
 /* Fatal Error Screen */
 .fatal-error-screen {
   position: fixed;
