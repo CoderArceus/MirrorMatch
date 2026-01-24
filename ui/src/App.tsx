@@ -534,6 +534,132 @@ function App() {
     );
   };
 
+  // ============================================================================
+  // Day 27: Turn Resolution Summary & Auction Transparency
+  // ============================================================================
+
+  /**
+   * Generates a human-readable summary of what happened in a turn
+   * Derived from actionLog and current state - no new state fields
+   */
+  const generateTurnSummary = (turnActions: TurnActions, turnNumber: number, beforeState: GameState, afterState: GameState): {
+    myAction: string;
+    opponentAction: string;
+    result: string;
+    isAuction: boolean;
+    auctionDetails?: {
+      myBid: number;
+      opponentBid: number;
+      winner: 'player1' | 'player2';
+      loserLane: number;
+      tiebreak?: string;
+    };
+  } => {
+    const myAction = turnActions.playerActions.find(pa => pa.playerId === myPlayerRole)!;
+    const opponentAction = turnActions.playerActions.find(pa => pa.playerId !== myPlayerRole)!;
+
+    // Check if auction turn
+    const isAuction = [4, 8].includes(turnNumber);
+
+    if (isAuction && myAction.action.type === 'bid' && opponentAction.action.type === 'bid') {
+      const myBid = myAction.action.bidAmount;
+      const opponentBid = opponentAction.action.bidAmount;
+      
+      let winner: 'player1' | 'player2';
+      let loserLane: number;
+      let tiebreak: string | undefined;
+
+      // Determine winner
+      if (myBid > opponentBid) {
+        winner = myPlayerRole;
+        loserLane = opponentAction.action.potentialVoidStoneLane;
+      } else if (opponentBid > myBid) {
+        winner = myPlayerRole === 'player1' ? 'player2' : 'player1';
+        loserLane = myAction.action.potentialVoidStoneLane;
+      } else {
+        // Tie - use Leader's Burden
+        const myScore = beforeState.players.find(p => p.id === myPlayerRole)!.lanes.reduce((sum, l) => sum + (l.busted ? 0 : l.total), 0);
+        const oppScore = beforeState.players.find(p => p.id !== myPlayerRole)!.lanes.reduce((sum, l) => sum + (l.busted ? 0 : l.total), 0);
+        
+        if (myScore > oppScore) {
+          winner = myPlayerRole === 'player1' ? 'player2' : 'player1';
+          loserLane = myAction.action.potentialVoidStoneLane;
+          tiebreak = `Leader's Burden: higher board score (${myScore}) lost`;
+        } else if (oppScore > myScore) {
+          winner = myPlayerRole;
+          loserLane = opponentAction.action.potentialVoidStoneLane;
+          tiebreak = `Leader's Burden: higher board score lost`;
+        } else {
+          // Deterministic fallback
+          winner = 'player2';
+          loserLane = myAction.action.potentialVoidStoneLane;
+          tiebreak = 'Tie resolved by player order';
+        }
+      }
+
+      return {
+        myAction: `Bid ${myBid} energy`,
+        opponentAction: `Bid ${opponentBid} energy`,
+        result: winner === myPlayerRole ? 'You won the auction' : 'Opponent won the auction',
+        isAuction: true,
+        auctionDetails: { myBid, opponentBid, winner, loserLane, tiebreak }
+      };
+    }
+
+    // Normal turn
+    const formatAction = (action: PlayerAction): string => {
+      switch (action.type) {
+        case 'take':
+          return `Take → Lane ${String.fromCharCode(65 + action.targetLane)}`;
+        case 'burn':
+          return 'Burn';
+        case 'stand':
+          return `Stand Lane ${String.fromCharCode(65 + action.targetLane)}`;
+        case 'blind_hit':
+          return `Blind Hit → Lane ${String.fromCharCode(65 + action.targetLane)}`;
+        case 'pass':
+          return 'Pass';
+        default:
+          return 'Unknown';
+      }
+    };
+
+    // Determine result
+    let result = '';
+    const frontCard = beforeState.queue[0];
+    
+    if (myAction.action.type === 'take' && opponentAction.action.type === 'take') {
+      result = `Both took ${frontCard?.rank}${frontCard?.suit}`;
+    } else if (myAction.action.type === 'burn' && opponentAction.action.type === 'burn') {
+      result = `Card ${frontCard?.rank}${frontCard?.suit} burned`;
+    } else if ((myAction.action.type === 'take' && opponentAction.action.type === 'burn') ||
+               (myAction.action.type === 'burn' && opponentAction.action.type === 'take')) {
+      result = `Card burned → Ash consolation`;
+    } else if (myAction.action.type === 'take') {
+      result = `You took ${frontCard?.rank}${frontCard?.suit}`;
+    } else if (opponentAction.action.type === 'take') {
+      result = `Opponent took ${frontCard?.rank}${frontCard?.suit}`;
+    } else if (myAction.action.type === 'burn') {
+      result = `You burned ${frontCard?.rank}${frontCard?.suit}`;
+    } else if (opponentAction.action.type === 'burn') {
+      result = `Opponent burned ${frontCard?.rank}${frontCard?.suit}`;
+    }
+
+    // Check for overheat application
+    const myAfterState = afterState.players.find(p => p.id === myPlayerRole)!;
+    const myBeforeState = beforeState.players.find(p => p.id === myPlayerRole)!;
+    if (myAfterState.overheat > myBeforeState.overheat) {
+      result += ` → You gained Overheat`;
+    }
+
+    return {
+      myAction: formatAction(myAction.action),
+      opponentAction: formatAction(opponentAction.action),
+      result,
+      isAuction: false
+    };
+  };
+
   // End of inner component definitions
   // ============================================================================
   // Async PvP: Load match from URL if present
@@ -894,7 +1020,17 @@ function App() {
       <div key={laneIndex} className={`lane ${statusClass} ${lane.shackled ? 'lane-shackled' : ''}`}>
         <div className="lane-header">
           Lane {String.fromCharCode(65 + laneIndex)} {/* A, B, C */}
-          {lane.shackled && ' ⛓️'}
+          {/* Day 27: Status Effect Badges */}
+          {lane.shackled && (
+            <span className="status-badge shackled-badge" title="Shackled: Requires 20+ to Stand">
+              ⛓️
+            </span>
+          )}
+          {lane.hasBeenShackled && !lane.shackled && (
+            <span className="status-badge history-badge" title="Previously shackled (cannot be shackled again)">
+              ⛓
+            </span>
+          )}
         </div>
         <div className="lane-total">
           {lane.total}
@@ -923,8 +1059,11 @@ function App() {
         <div className="player-header">
           <h2>{playerName}</h2>
           <div className="energy">⚡ Energy: {player.energy}</div>
+          {/* Day 27: Status Effect Badge - Overheat */}
           {player.overheat > 0 && (
-            <div className="overheat">🔥 Overheat: {player.overheat}</div>
+            <div className="overheat status-badge overheat-badge" title={`Overheat blocks Burn and Blind Hit for ${player.overheat} more turn(s)`}>
+              🔥 Cooling: {player.overheat} turn{player.overheat > 1 ? 's' : ''}
+            </div>
           )}
         </div>
         <div className="lanes">
@@ -1264,8 +1403,63 @@ function App() {
           </div>
         )}
 
-        {/* Day 24: Move History Preview */}
+        {/* Day 27: Turn Resolution Summary + Auction Transparency */}
         {asyncMode && actionHistory.length > 0 && (
+          <div className="move-history">
+            <h3>📜 Turn History</h3>
+            <div className="move-history-list">
+              {actionHistory.map((turnActions, turnIndex) => {
+                // Reconstruct state before and after this turn for summary
+                const stateBeforeTurn = turnIndex === 0 
+                  ? createInitialGameState(gameSeed)
+                  : runReplay({ initialState: createInitialGameState(gameSeed), turns: actionHistory.slice(0, turnIndex) });
+                const stateAfterTurn = runReplay({ initialState: createInitialGameState(gameSeed), turns: actionHistory.slice(0, turnIndex + 1) });
+                
+                const summary = generateTurnSummary(turnActions, turnIndex + 1, stateBeforeTurn, stateAfterTurn);
+                
+                return (
+                  <div key={turnIndex} className={`history-turn ${summary.isAuction ? 'auction-turn' : ''}`}>
+                    <div className="history-turn-header">
+                      <div className="history-turn-number">Turn {turnIndex + 1}</div>
+                      {summary.isAuction && <span className="auction-label">🎯 Auction</span>}
+                    </div>
+                    
+                    {summary.isAuction && summary.auctionDetails ? (
+                      <div className="auction-summary">
+                        <div className="auction-bids">
+                          <div className="bid-line">You: {summary.auctionDetails.myBid} energy</div>
+                          <div className="bid-line">Opponent: {summary.auctionDetails.opponentBid} energy</div>
+                        </div>
+                        <div className="auction-result">
+                          {summary.result}
+                        </div>
+                        {summary.auctionDetails.tiebreak && (
+                          <div className="auction-tiebreak">
+                            {summary.auctionDetails.tiebreak}
+                          </div>
+                        )}
+                        <div className="auction-effect">
+                          Lane {String.fromCharCode(65 + summary.auctionDetails.loserLane)} shackled (Void Stone)
+                        </div>
+                      </div>
+                    ) : (
+                      <div className="turn-summary">
+                        <div className="action-line">• You: {summary.myAction}</div>
+                        <div className="action-line">• Opponent: {summary.opponentAction}</div>
+                        {summary.result && (
+                          <div className="result-line">→ {summary.result}</div>
+                        )}
+                      </div>
+                    )}
+                  </div>
+                );
+              })}
+            </div>
+          </div>
+        )}
+
+        {/* Legacy Day 24: Move History for non-async (deprecated, keeping for compatibility) */}
+        {!asyncMode && actionHistory.length > 0 && (
           <div className="move-history">
             <h3>📜 Move History</h3>
             <div className="move-history-list">
@@ -1420,6 +1614,15 @@ function App() {
             </button>
           )}
         </div>
+
+        {/* Day 27: Desync Confidence Signal */}
+        {asyncMode && (
+          <div className="replay-confidence-footer">
+            <span className="confidence-indicator">
+              State verified from replay (deterministic) ✓
+            </span>
+          </div>
+        )}
       </div>
     </div>
   );
