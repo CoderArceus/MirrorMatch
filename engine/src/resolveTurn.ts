@@ -695,36 +695,23 @@ function applyVoidStone(player: PlayerState, laneIndex: number, _turn: number): 
 
 /**
  * Resolves Overheat decay and costs
- * Day 26 Bug Fix: Both Burn and BlindHit apply Overheat (+2)
+ * Day 28 Bug Fix: Overheat should last EXACTLY 2 full turns
+ * Both Burn and BlindHit apply Overheat (+2)
  * Overheat blocks both Burn and BlindHit actions
  */
 function resolveOverheat(player: PlayerState, action: PlayerAction): PlayerState {
   let newOverheat = player.overheat;
 
-  // Decay at end of turn
-  // Overheat decreases by 1 at the end of each turn
-  if (newOverheat > 0) {
-    newOverheat--;
-  }
-
-  // Apply costs - Both Burn and BlindHit cause overheat (+2)
+  // Apply costs FIRST - Both Burn and BlindHit cause overheat (+2)
   if (action.type === 'burn' || action.type === 'blind_hit') {
-    // Burn/BlindHit adds Overheat +2
-    // If player already has overheat, duration increased by 2
-    const currentStart = player.overheat;
-    let nextVal = currentStart;
-
-    if (currentStart > 0) {
-      nextVal += 2;
-    } else {
-      nextVal = 2;
+    // Set overheat to 2 (player cannot Burn/BlindHit for next 2 turns)
+    newOverheat = 2;
+  } else {
+    // Decay at end of turn (only if NOT using Burn/BlindHit this turn)
+    // Overheat decreases by 1 at the end of each turn
+    if (newOverheat > 0) {
+      newOverheat--;
     }
-
-    // Decay
-    if (nextVal > 0) {
-      nextVal--;
-    }
-    newOverheat = nextVal;
   }
 
   return {

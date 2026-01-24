@@ -375,7 +375,7 @@ function App() {
   // Dynamic Action Rendering Components
   // ============================================================================
 
-  // Auction Controls Component
+  // Auction Controls Component - Day 28: Button-based bidding
   const AuctionControls = ({
     onSubmit,
     activePlayer,
@@ -403,18 +403,24 @@ function App() {
 
     return (
       <div className="auction-controls">
-        <div className="bid-input-group">
+        <div className="bid-selection-group">
           <label>
-            <strong>Your Bid (0-{maxBid} energy)</strong>
-            <input
-              type="number"
-              min={0}
-              max={maxBid}
-              value={bidAmount}
-              onChange={(e) => setBidAmount(Math.max(0, Math.min(maxBid, parseInt(e.target.value) || 0)))}
-              className="bid-input"
-            />
+            <strong>Your Bid</strong>
           </label>
+          <div className="bid-buttons">
+            {Array.from({ length: maxBid + 1 }, (_, i) => i).map(bid => (
+              <button
+                key={bid}
+                onClick={() => setBidAmount(bid)}
+                className={`bid-btn ${bidAmount === bid ? 'selected' : ''}`}
+              >
+                {bid}
+              </button>
+            ))}
+          </div>
+          <div className="selected-bid-display">
+            Selected: <strong>{bidAmount} energy</strong>
+          </div>
         </div>
 
         <div className="void-stone-lane-group">

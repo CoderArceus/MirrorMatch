@@ -170,14 +170,14 @@ describe('Day 26 Bug Fixes', () => {
       });
       
       expect(state.players[0].energy).toBe(1);
-      expect(state.players[0].overheat).toBe(1); // Burn DOES cause overheat (+2, then -1 decay = 1)
+      expect(state.players[0].overheat).toBe(2); // Burn causes overheat (2 turns cooldown)
       
       // Burn again on turn 2 - should be ILLEGAL (blocked by overheat)
       const legalActions = getLegalActions(state, 'player1');
       const burnAction = legalActions.find(a => a.type === 'burn');
       expect(burnAction).toBeUndefined();
       
-      // Take instead to wait for overheat to clear
+      // Take instead to wait for overheat to decay (turn 2)
       state = resolveTurn(state, {
         playerActions: [
           { playerId: 'player1', action: { type: 'take', targetLane: 0 } },
@@ -185,12 +185,23 @@ describe('Day 26 Bug Fixes', () => {
         ],
       });
       
-      expect(state.players[0].overheat).toBe(0); // Overheat cleared
+      expect(state.players[0].overheat).toBe(1); // Overheat decayed from 2 to 1
       
-      // Now burn should be legal again
+      // Still blocked on turn 3
       const legalActions2 = getLegalActions(state, 'player1');
       const burnAction2 = legalActions2.find(a => a.type === 'burn');
-      expect(burnAction2).toBeDefined();
+      expect(burnAction2).toBeUndefined();
+      
+      // Take again to wait for overheat to fully clear (turn 3)
+      state = resolveTurn(state, {
+        playerActions: [
+          { playerId: 'player1', action: { type: 'take', targetLane: 1 } },
+          { playerId: 'player2', action: { type: 'take', targetLane: 1 } },
+        ],
+      });
+      
+      expect(state.players[0].overheat).toBe(0); // Overheat fully cleared
+      expect(state.turnNumber).toBe(4); // Now on turn 4 (Dark Auction - skip verification)
     });
     
     it('should block both burn and blindhit when overheat is active', () => {
@@ -248,9 +259,9 @@ describe('Day 26 Bug Fixes', () => {
         ],
       });
       
-      // Both players should have overheat (2 - 1 decay = 1)
-      expect(state.players[0].overheat).toBe(1);
-      expect(state.players[1].overheat).toBe(1);
+      // Both players should have overheat (2 turns)
+      expect(state.players[0].overheat).toBe(2);
+      expect(state.players[1].overheat).toBe(2);
     });
   });
   
