@@ -4,8 +4,8 @@
  */
 
 import { randomInt } from 'crypto';
-import type { GameState, PlayerAction, TurnActions } from '../../engine/src';
-import { createInitialGameState, resolveTurn, getLegalActions, isActionLegal } from '../../engine/src';
+import type { GameState, PlayerAction, TurnActions } from '../engine/src';
+import { createInitialGameState, resolveTurn, getLegalActions, isActionLegal } from '../engine/src';
 import { log } from './logger.js';
 import {
   assertHistoryInvariant,

@@ -3,7 +3,7 @@
  * All message types between client and server
  */
 
-import type { GameState, PlayerAction, TurnActions } from '../../engine/src';
+import type { GameState, PlayerAction, TurnActions } from '../engine/src';
 
 // ============================================================================
 // Client → Server Messages

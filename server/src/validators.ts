@@ -3,7 +3,7 @@
  * Throws loudly if violated
  */
 
-import type { GameState, TurnActions } from '../../engine/src';
+import type { GameState, TurnActions } from '../engine/src';
 import { logError } from './logger.js';
 
 export class InvariantViolation extends Error {
