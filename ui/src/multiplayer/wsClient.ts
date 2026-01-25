@@ -230,9 +230,11 @@ class WSClient {
 // Export singleton instance
 export const wsClient = new WSClient();
 
-// Export default server URL (can be overridden)
+// Export default server URL (can be overridden via environment variable)
+// In production, VITE_WS_URL should point to the Railway-hosted server
+// In development, falls back to localhost:8080
 export const DEFAULT_WS_URL = 
   import.meta.env.VITE_WS_URL || 
-  (window.location.protocol === 'https:' 
-    ? `wss://${window.location.hostname}:8080`
-    : `ws://${window.location.hostname}:8080`);
+  (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1'
+    ? `ws://${window.location.hostname}:8080`
+    : `wss://${window.location.hostname}:8080`);

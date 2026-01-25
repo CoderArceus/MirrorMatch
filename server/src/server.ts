@@ -468,8 +468,42 @@ function handleDisconnect(conn: Connection): void {
 // Server Creation
 // ============================================================================
 
-export function createServer(port: number): WebSocketServer {
-  const wss = new WebSocketServer({ port });
+import { createServer as createHttpServer, IncomingMessage, ServerResponse } from 'http';
+
+export function createServer(port: number) {
+  // Create HTTP server for health checks and WebSocket upgrade
+  const httpServer = createHttpServer((req: IncomingMessage, res: ServerResponse) => {
+    // Health check endpoint for Railway/deployment platforms
+    if (req.url === '/health' || req.url === '/') {
+      res.writeHead(200, { 
+        'Content-Type': 'application/json',
+        'Access-Control-Allow-Origin': '*'
+      });
+      res.end(JSON.stringify({ 
+        status: 'ok', 
+        server: 'seque-pvp',
+        connections: connections.size 
+      }));
+      return;
+    }
+    
+    // CORS preflight for WebSocket
+    if (req.method === 'OPTIONS') {
+      res.writeHead(204, {
+        'Access-Control-Allow-Origin': '*',
+        'Access-Control-Allow-Methods': 'GET, OPTIONS',
+        'Access-Control-Allow-Headers': '*'
+      });
+      res.end();
+      return;
+    }
+    
+    res.writeHead(404);
+    res.end('Not Found');
+  });
+  
+  // Attach WebSocket server to HTTP server
+  const wss = new WebSocketServer({ server: httpServer });
   
   wss.on('connection', handleConnection);
   
@@ -477,7 +511,10 @@ export function createServer(port: number): WebSocketServer {
     logError('WebSocket server error', error);
   });
   
-  log('room_created', { event: 'server_started', port });
+  // Start listening
+  httpServer.listen(port, '0.0.0.0', () => {
+    log('room_created', { event: 'server_started', port });
+  });
   
-  return wss;
+  return httpServer;
 }
