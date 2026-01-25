@@ -103,19 +103,72 @@ export const GameView: React.FC<GameViewProps> = ({
 
   const filterActions = (actions: PlayerAction[]) => actions.filter(a => a.type !== 'pass');
 
-  // Render lane
-  const renderLane = (lane: typeof p1.lanes[0], index: number) => {
+  // Check if action is available for a lane
+  const canTakeLane = (laneIndex: number) => {
+    return activeActions.some(a => a.type === 'take' && 'targetLane' in a && a.targetLane === laneIndex);
+  };
+  
+  const canStandLane = (laneIndex: number) => {
+    return activeActions.some(a => a.type === 'stand' && 'targetLane' in a && a.targetLane === laneIndex);
+  };
+  
+  const canBlindHitLane = (laneIndex: number) => {
+    return activeActions.some(a => a.type === 'blind_hit' && 'targetLane' in a && a.targetLane === laneIndex);
+  };
+
+  // Handle lane tap (for mobile)
+  const handleLaneTap = (laneIndex: number) => {
+    if (isMultiplayerDisabled || activePending || isAuctionTurn) return;
+    
+    if (canTakeLane(laneIndex)) {
+      onAction(activePlayer, { type: 'take', targetLane: laneIndex });
+    } else if (canBlindHitLane(laneIndex)) {
+      onAction(activePlayer, { type: 'blind_hit', targetLane: laneIndex });
+    }
+  };
+  
+  // Handle stand button tap
+  const handleStandTap = (laneIndex: number, e: React.MouseEvent) => {
+    e.stopPropagation();
+    if (isMultiplayerDisabled || activePending || isAuctionTurn) return;
+    
+    if (canStandLane(laneIndex)) {
+      onAction(activePlayer, { type: 'stand', targetLane: laneIndex });
+    }
+  };
+  
+  // Handle blind hit button tap (for shackled lanes)
+  const handleBlindHitTap = (laneIndex: number, e: React.MouseEvent) => {
+    e.stopPropagation();
+    if (isMultiplayerDisabled || activePending || isAuctionTurn) return;
+    
+    if (canBlindHitLane(laneIndex)) {
+      onAction(activePlayer, { type: 'blind_hit', targetLane: laneIndex });
+    }
+  };
+
+  // Render lane (with mobile interactive mode for active player)
+  const renderLane = (lane: typeof p1.lanes[0], index: number, isActiveBoard: boolean) => {
     const classes = ['lane', lane.busted && 'busted', lane.locked && 'locked', lane.shackled && 'shackled'].filter(Boolean).join(' ');
+    
+    const isTappable = isActiveBoard && !activePending && !isAuctionTurn && !isMultiplayerDisabled && (canTakeLane(index) || canBlindHitLane(index));
+    const canStand = isActiveBoard && !activePending && !isAuctionTurn && !isMultiplayerDisabled && canStandLane(index);
 
     return (
-      <div key={index} className={classes}>
+      <div 
+        key={index} 
+        className={`${classes} ${isTappable ? 'tappable' : ''}`}
+        onClick={isTappable ? () => handleLaneTap(index) : undefined}
+      >
+        {/* Shackle indicator on top */}
+        {lane.shackled && (
+          <span className="lane-shackle-indicator">⛓️</span>
+        )}
+        
         <div className="lane-header">
           <span className="lane-label">{String.fromCharCode(65 + index)}</span>
-          {(lane.shackled || lane.locked || lane.busted) && (
-            <span className="lane-badge">
-              {lane.busted ? '💥' : lane.shackled ? '⛓️' : '🔒'}
-            </span>
-          )}
+          {lane.busted && <span className="lane-badge">💥</span>}
+          {lane.locked && !lane.busted && <span className="lane-badge">🔒</span>}
         </div>
         <div className={`lane-total ${lane.busted ? 'bust' : lane.total === 21 ? 'blackjack' : ''}`}>
           {lane.busted ? '💀' : lane.total}
@@ -131,6 +184,28 @@ export const GameView: React.FC<GameViewProps> = ({
             ))
           )}
         </div>
+        
+        {/* Lane action buttons (mobile) - show both when applicable */}
+        {isActiveBoard && !activePending && !isAuctionTurn && !isMultiplayerDisabled && (canStand || canBlindHitLane(index)) && (
+          <div className="lane-action-btns">
+            {canStand && (
+              <button 
+                className="lane-action-btn stand"
+                onClick={(e) => handleStandTap(index, e)}
+              >
+                🔒
+              </button>
+            )}
+            {canBlindHitLane(index) && (
+              <button 
+                className="lane-action-btn blind"
+                onClick={(e) => handleBlindHitTap(index, e)}
+              >
+                🎲
+              </button>
+            )}
+          </div>
+        )}
       </div>
     );
   };
@@ -406,7 +481,7 @@ export const GameView: React.FC<GameViewProps> = ({
   };
 
   return (
-    <div className="game-view">
+    <div className={`game-view ${isAuctionTurn ? 'auction-mode' : ''}`}>
       {/* Background */}
       <div className="game-bg">
         <div className="bg-orb orb-1"></div>
@@ -461,7 +536,7 @@ export const GameView: React.FC<GameViewProps> = ({
             </div>
           </div>
           <div className="lanes">
-            {p1.lanes.map((lane, i) => renderLane(lane, i))}
+            {p1.lanes.map((lane, i) => renderLane(lane, i, activePlayer === 'player1'))}
           </div>
         </section>
 
@@ -489,13 +564,30 @@ export const GameView: React.FC<GameViewProps> = ({
             </div>
           </div>
           <div className="lanes">
-            {p2.lanes.map((lane, i) => renderLane(lane, i))}
+            {p2.lanes.map((lane, i) => renderLane(lane, i, activePlayer === 'player2'))}
           </div>
         </section>
       </main>
 
+      {/* Mobile Floating Burn Button */}
+      {!isAuctionTurn && !activePending && !isMultiplayerDisabled && filterActions(activeActions).some(a => a.type === 'burn') && (
+        <button 
+          className="mobile-burn-fab"
+          onClick={() => onAction(activePlayer, { type: 'burn' })}
+        >
+          🔥
+        </button>
+      )}
+
       {/* Controls Dock */}
       <section className="controls-dock">
+        {/* Mobile Timer - Only shown on mobile via CSS */}
+        {playMode === 'multiplayer' && timeRemaining !== null && timeRemaining !== undefined && (
+          <div className={`mobile-timer ${timeRemaining < 5000 ? 'urgent' : ''}`}>
+            <span className="timer-icon">⏱️</span>
+            <span>{formatTime(timeRemaining)}</span>
+          </div>
+        )}
         {renderControls()}
       </section>
 

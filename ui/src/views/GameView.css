@@ -726,6 +726,13 @@
 }
 
 /* ============================================
+   Mobile Timer - Hidden on desktop
+   ============================================ */
+.mobile-timer {
+  display: none;
+}
+
+/* ============================================
    Responsive
    ============================================ */
 @media (max-width: 900px) {
@@ -797,20 +804,371 @@
   }
 }
 
+/* Hide mobile burn FAB on desktop */
+.mobile-burn-fab { display: none; }
+
 @media (max-width: 600px) {
+  /* ══════════════════════════════════════════════════════════════════════════
+     MOBILE LAYOUT v6 - Fixed sizing and centering
+     ══════════════════════════════════════════════════════════════════════════ */
+  
+  /* Header */
   .game-header {
-    padding: var(--sp-2) var(--sp-3);
+    padding: 10px 16px;
+    gap: 8px;
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    z-index: 50;
+    background: rgba(15, 15, 23, 0.95);
+    backdrop-filter: blur(12px);
   }
 
-  .header-btn,
-  .turn-display,
-  .mode-display {
-    padding: var(--sp-1) var(--sp-3);
-    font-size: 0.8rem;
+  .header-btn { padding: 6px 12px; font-size: 0.8rem; }
+  .turn-display { padding: 6px 14px; gap: 8px; }
+  .turn-label { display: none; }
+  .turn-number { font-size: 1.2rem; }
+  .auction-tag { font-size: 1rem; }
+  .turn-display .timer-display { display: none; }
+  .mode-display { padding: 6px 12px; font-size: 0.75rem; max-width: 100px; }
+
+  /* Main Layout */
+  .game-view {
+    display: flex;
+    flex-direction: column;
+    height: 100vh;
+    height: 100dvh;
+    overflow: hidden;
+  }
+  
+  .game-content {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    padding: 12px;
+    padding-top: 56px;
+    padding-bottom: 0;
+    gap: 12px;
+    overflow: hidden;
+    min-height: 0;
+    transition: padding-top 0.3s ease;
+  }
+  
+  /* During auction mode - keep centered but allow content to compress slightly */
+  .game-view.auction-mode .game-content {
+    justify-content: center;
+    padding-top: 56px;
+    padding-bottom: 8px;
+    gap: 8px;
+    overflow: hidden;
+  }
+  
+  /* Make boards slightly more compact during auction to fit everything */
+  .game-view.auction-mode .player-board {
+    min-height: auto;
+    padding: 10px 14px;
+  }
+  
+  .game-view.auction-mode .lane {
+    min-height: auto;
+    padding: 10px 6px;
+    padding-bottom: 18px;
+  }
+  
+  .game-view.auction-mode .lane-total {
+    font-size: 2rem;
+    margin: 4px 0;
+  }
+  
+  .game-view.auction-mode .queue-panel {
+    padding: 10px 14px;
   }
 
-  .turn-number {
-    font-size: 1.1rem;
+  /* Queue - Compact centered */
+  .queue-panel {
+    flex: none;
+    width: 100%;
+    max-width: 400px;
+    flex-direction: row;
+    align-items: center;
+    justify-content: center;
+    padding: 12px 16px;
+    gap: 12px;
+    border-radius: 12px;
+  }
+  
+  .queue-header { font-size: 0.75rem; padding: 4px 10px; }
+  .queue-cards { flex-direction: row; gap: 8px; justify-content: center; }
+  .queue-card { width: 40px; height: 54px; }
+  .queue-card .rank { font-size: 1rem; }
+  .queue-card .suit { font-size: 0.75rem; }
+  .queue-card:nth-child(n+5) { display: none; }
+  .deck-info { font-size: 0.75rem; padding: 4px 8px; }
+
+  /* Player Boards - Increased height, centered */
+  .player-board {
+    flex: none;
+    width: 100%;
+    max-width: 400px;
+    min-height: 180px;
+    padding: 14px;
+    border-radius: 12px;
+    display: flex;
+    flex-direction: column;
+  }
+
+  .board-header { margin-bottom: 10px; }
+  .board-header h2 { font-size: 0.95rem; font-weight: 700; }
+  .player-stats { gap: 8px; }
+  .player-stats .stat { font-size: 0.8rem; padding: 4px 10px; }
+
+  .lanes {
+    display: flex;
+    flex: 1;
+    gap: 8px;
+  }
+
+  /* Lanes - Clean design */
+  .lane {
+    flex: 1;
+    flex-direction: column;
+    align-items: center;
+    justify-content: flex-start;
+    padding: 14px 8px;
+    padding-bottom: 24px;
+    gap: 8px;
+    border-radius: 10px;
+    min-width: 0;
+    min-height: 120px;
+    position: relative;
+    transition: all 0.15s ease;
+  }
+  
+  /* Hide floating shackle indicator - use badge instead */
+  .lane-shackle-indicator { display: none; }
+  
+  /* Tappable lane highlight */
+  .lane.tappable {
+    cursor: pointer;
+    box-shadow: inset 0 0 0 2px rgba(59, 130, 246, 0.6);
+    background: rgba(59, 130, 246, 0.1) !important;
+  }
+  
+  .lane.tappable:active {
+    transform: scale(0.98);
+    background: rgba(59, 130, 246, 0.2) !important;
+  }
+  
+  .lane-header { margin-bottom: 0; display: flex; align-items: center; gap: 4px; }
+  .lane-label { font-size: 0.9rem; font-weight: 700; }
+  .lane-badge { font-size: 1.1rem; }
+  
+  .lane-total { 
+    font-size: 2.25rem; 
+    font-weight: 800; 
+    line-height: 1; 
+    margin: 6px 0; 
+  }
+
+  .lane-cards {
+    flex-wrap: wrap;
+    justify-content: center;
+    gap: 4px;
+    margin-top: auto;
+  }
+  
+  .card-chip { padding: 3px 6px; font-size: 0.7rem; }
+  .card-chip:nth-child(n+5) { display: none; }
+  .empty-lane { font-size: 0.8rem; }
+  
+  /* Lane action buttons container */
+  .lane-action-btns {
+    position: absolute;
+    bottom: -14px;
+    left: 50%;
+    transform: translateX(-50%);
+    display: flex;
+    gap: 4px;
+    z-index: 5;
+  }
+  
+  .lane-action-btn {
+    width: 32px;
+    height: 32px;
+    border-radius: 50%;
+    font-size: 0.9rem;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    transition: all 0.15s ease;
+    border: 2px solid;
+  }
+  
+  .lane-action-btn.stand {
+    background: rgba(34, 197, 94, 0.15);
+    border-color: rgba(34, 197, 94, 0.5);
+    color: #22c55e;
+  }
+  
+  .lane-action-btn.stand:hover {
+    background: rgba(34, 197, 94, 0.25);
+  }
+  
+  .lane-action-btn.stand:active {
+    transform: scale(0.9);
+    background: rgba(34, 197, 94, 0.35);
+  }
+  
+  .lane-action-btn.blind {
+    background: rgba(156, 39, 176, 0.15);
+    border-color: rgba(156, 39, 176, 0.5);
+    color: #ba68c8;
+  }
+  
+  .lane-action-btn.blind:hover {
+    background: rgba(156, 39, 176, 0.25);
+  }
+  
+  .lane-action-btn.blind:active {
+    transform: scale(0.9);
+    background: rgba(156, 39, 176, 0.35);
+  }
+
+  /* Floating Burn Button */
+  .mobile-burn-fab {
+    display: flex !important;
+    position: fixed;
+    bottom: calc(70px + env(safe-area-inset-bottom, 0px));
+    right: 16px;
+    width: 56px;
+    height: 56px;
+    border-radius: 50%;
+    background: linear-gradient(135deg, #ef4444, #dc2626);
+    border: none;
+    box-shadow: 0 4px 20px rgba(239, 68, 68, 0.5);
+    font-size: 1.5rem;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    z-index: 100;
+    transition: all 0.15s ease;
+  }
+  
+  .mobile-burn-fab:active {
+    transform: scale(0.9);
+    box-shadow: 0 2px 10px rgba(239, 68, 68, 0.5);
+  }
+
+  /* Controls Dock - HIDDEN when not needed */
+  .game-view .controls-dock {
+    display: none;
+  }
+  
+  /* Only show controls dock when it has status content */
+  .game-view .controls-dock:has(.controls-status),
+  .game-view .controls-dock:has(.controls-auction),
+  .game-view .controls-dock:has(.mobile-timer) {
+    display: flex;
+    position: relative !important;
+    flex: none !important;
+    background: rgba(15, 15, 23, 0.98);
+    border-top: 1px solid rgba(255, 255, 255, 0.08);
+    flex-direction: column;
+    align-items: center;
+    padding: 10px 16px;
+    padding-bottom: calc(10px + env(safe-area-inset-bottom, 0px));
+    gap: 8px;
+  }
+  
+  /* Hide regular action controls on mobile */
+  .controls-dock .controls-actions { display: none; }
+  
+  /* Show status messages */
+  .controls-dock .controls-status {
+    display: flex;
+    padding: 10px 16px;
+    font-size: 0.85rem;
+    gap: 10px;
+  }
+  
+  .controls-status .status-icon { font-size: 1rem; }
+  .controls-status .sub-status { font-size: 0.7rem; }
+  .opponent-status { font-size: 0.7rem; margin-top: 4px; }
+
+  /* Mobile Timer */
+  .mobile-timer {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 6px;
+    padding: 6px 16px;
+    background: rgba(139, 92, 246, 0.2);
+    border-radius: 20px;
+    font-size: 1rem;
+    font-weight: 700;
+    color: #a78bfa;
+  }
+  
+  .mobile-timer.urgent {
+    background: rgba(239, 68, 68, 0.25);
+    color: #ef4444;
+    animation: pulse-urgent 0.5s infinite;
+  }
+  
+  .mobile-timer .timer-icon { font-size: 0.85rem; }
+
+  /* Auction Controls - Compact for mobile */
+  .controls-auction {
+    width: 100%;
+    padding: 10px 12px;
+    gap: 8px;
+    min-width: auto;
+  }
+
+  .auction-header { gap: 6px; }
+  .auction-badge { font-size: 0.75rem; }
+  .auction-player { font-size: 0.65rem; padding: 3px 8px; }
+
+  .auction-fields {
+    flex-direction: row;
+    flex-wrap: wrap;
+    gap: 8px;
+    width: 100%;
+    justify-content: center;
+  }
+
+  .auction-field { 
+    align-items: center; 
+    flex: 0 1 auto;
+  }
+  .auction-field label { font-size: 0.6rem; margin-bottom: 4px; }
+  .chip-group { flex-wrap: wrap; justify-content: center; gap: 4px; }
+  .chip { width: 34px; height: 34px; font-size: 0.85rem; }
+  .submit-btn { width: 100%; padding: 10px; font-size: 0.85rem; }
+
+  /* History Bar - Bottom */
+  .history-bar {
+    display: flex;
+    flex: none;
+    padding: 10px 12px;
+    gap: 8px;
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+    background: rgba(15, 15, 23, 0.95);
+    border-top: 1px solid rgba(255, 255, 255, 0.05);
+    justify-content: center;
+  }
+  
+  .history-bar .history-chip {
+    padding: 5px 10px;
+    font-size: 0.75rem;
+    flex-shrink: 0;
+    background: rgba(255, 255, 255, 0.08);
+    border-radius: 6px;
   }
 }
 
