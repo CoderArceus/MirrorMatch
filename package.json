@@ -4,10 +4,13 @@
   "description": "Seque PvP Game Server",
   "private": true,
   "scripts": {
-    "start": "cd server && npm start",
+    "start": "node --import tsx server/src/index.ts",
     "postinstall": "cd engine && npm install && cd ../server && npm install"
   },
   "engines": {
     "node": ">=18.0.0"
+  },
+  "dependencies": {
+    "tsx": "^4.19.3"
   }
 }
