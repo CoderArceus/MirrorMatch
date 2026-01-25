@@ -5,7 +5,7 @@
   "private": true,
   "scripts": {
     "start": "cd server && npm start",
-    "postinstall": "cd server && npm install"
+    "postinstall": "cd engine && npm install && cd ../server && npm install"
   },
   "engines": {
     "node": ">=18.0.0"
