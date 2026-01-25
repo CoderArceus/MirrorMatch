@@ -1,0 +1,13 @@
+{
+  "name": "seque",
+  "version": "1.0.0",
+  "description": "Seque PvP Game Server",
+  "private": true,
+  "scripts": {
+    "start": "cd server && npm start",
+    "postinstall": "cd server && npm install"
+  },
+  "engines": {
+    "node": ">=18.0.0"
+  }
+}
