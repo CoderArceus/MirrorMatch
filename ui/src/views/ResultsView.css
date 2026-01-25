@@ -391,3 +391,127 @@
     grid-template-columns: repeat(2, 1fr);
   }
 }
+
+/* ============================================
+   Mobile Optimizations
+   ============================================ */
+@media (max-width: 600px) {
+  .results-container {
+    padding: var(--sp-3);
+    gap: var(--sp-3);
+  }
+  
+  .result-header {
+    padding: var(--sp-4);
+  }
+  
+  .result-icon {
+    font-size: 2.5rem;
+  }
+  
+  .result-title {
+    font-size: 1.5rem;
+  }
+  
+  .result-subtitle {
+    font-size: 0.85rem;
+  }
+  
+  /* Score display - more compact */
+  .score-display {
+    flex-direction: row;
+    gap: var(--sp-2);
+    padding: var(--sp-3);
+  }
+  
+  .score-player {
+    flex: 1;
+  }
+  
+  .score-name {
+    font-size: 0.75rem;
+  }
+  
+  .score-value {
+    font-size: 2rem;
+  }
+  
+  .score-badge {
+    font-size: 0.8rem;
+  }
+  
+  .score-divider {
+    padding: 0 var(--sp-2);
+  }
+  
+  .score-divider .vs {
+    font-size: 0.8rem;
+  }
+  
+  /* Lane breakdown - horizontal */
+  .lane-results {
+    gap: var(--sp-2);
+  }
+  
+  .lane-result {
+    padding: var(--sp-2);
+  }
+  
+  .lane-score {
+    font-size: 1.25rem;
+    width: 40px;
+    height: 40px;
+  }
+  
+  .lane-name {
+    font-size: 0.75rem;
+  }
+  
+  /* Stats grid - 2 columns */
+  .stats-grid {
+    grid-template-columns: repeat(2, 1fr);
+    gap: var(--sp-2);
+  }
+  
+  .stat-item {
+    padding: var(--sp-2);
+  }
+  
+  .stat-value {
+    font-size: 1.25rem;
+  }
+  
+  .stat-label {
+    font-size: 0.65rem;
+  }
+  
+  /* Action summary - collapse */
+  .history-summary {
+    padding: var(--sp-2);
+  }
+  
+  .action-row {
+    padding: var(--sp-1);
+    font-size: 0.8rem;
+  }
+  
+  /* Draw analysis - compact */
+  .draw-analysis {
+    padding: var(--sp-2);
+  }
+  
+  .analysis-content {
+    gap: var(--sp-2);
+  }
+  
+  /* Action buttons - full width stacked */
+  .result-actions {
+    flex-direction: column;
+    gap: var(--sp-2);
+  }
+  
+  .result-actions .btn {
+    width: 100%;
+    padding: var(--sp-3);
+  }
+}

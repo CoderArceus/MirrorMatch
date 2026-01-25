@@ -575,3 +575,106 @@
   padding: 0;
   line-height: 1;
 }
+
+/* ============================================
+   Mobile Optimizations
+   ============================================ */
+@media (max-width: 600px) {
+  .lobby-container {
+    padding: var(--sp-3);
+  }
+  
+  .lobby-header {
+    padding: var(--sp-2) 0;
+  }
+  
+  .lobby-header h1 {
+    font-size: 1.25rem;
+  }
+  
+  .back-btn {
+    padding: var(--sp-1) var(--sp-2);
+    font-size: 0.8rem;
+  }
+  
+  /* Larger touch targets for menu cards */
+  .menu-card {
+    padding: var(--sp-4);
+    min-height: 80px;
+  }
+  
+  .menu-card .card-icon {
+    font-size: 2rem;
+  }
+  
+  .menu-card .card-content h3 {
+    font-size: 1.1rem;
+  }
+  
+  /* Timer buttons - larger for thumb */
+  .timer-options {
+    gap: var(--sp-2);
+  }
+  
+  .timer-btn {
+    padding: var(--sp-3);
+    font-size: 1rem;
+    min-width: 60px;
+  }
+  
+  /* Form inputs */
+  .form-group input {
+    padding: var(--sp-3);
+    font-size: 1rem;
+  }
+  
+  .room-code-input {
+    font-size: 1.25rem !important;
+  }
+  
+  /* Player cards in lobby */
+  .player-card {
+    padding: var(--sp-3);
+  }
+  
+  .player-avatar {
+    font-size: 1.5rem;
+    width: 40px;
+    height: 40px;
+  }
+  
+  /* Room code display */
+  .code-box {
+    padding: var(--sp-3);
+  }
+  
+  .code-box .code {
+    font-size: 1.5rem;
+    letter-spacing: 0.15em;
+  }
+  
+  /* Buttons */
+  .btn.primary.large {
+    padding: var(--sp-3) var(--sp-4);
+    font-size: 1rem;
+  }
+  
+  /* Waiting animation - smaller */
+  .waiting-animation {
+    width: 80px;
+    height: 80px;
+  }
+  
+  .waiting-icon {
+    font-size: 2rem;
+  }
+  
+  /* Error toast */
+  .error-toast {
+    bottom: 1rem;
+    left: 1rem;
+    right: 1rem;
+    transform: none;
+    font-size: 0.85rem;
+  }
+}
