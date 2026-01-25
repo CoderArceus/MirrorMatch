@@ -7,11 +7,11 @@ import type { AIDifficulty } from '../../../engine/src';
 import './WelcomeView.css';
 
 interface WelcomeViewProps {
-  onStart: (mode: 'local' | 'ai' | 'async', difficulty?: AIDifficulty) => void;
+  onStart: (mode: 'local' | 'ai' | 'multiplayer', difficulty?: AIDifficulty) => void;
 }
 
 export const WelcomeView: React.FC<WelcomeViewProps> = ({ onStart }) => {
-  const [selectedMode, setSelectedMode] = useState<'local' | 'ai' | 'async' | null>(null);
+  const [selectedMode, setSelectedMode] = useState<'local' | 'ai' | 'multiplayer' | null>(null);
   const [aiDifficulty, setAIDifficulty] = useState<AIDifficulty>('medium');
   const [showRules, setShowRules] = useState(false);
 
@@ -78,18 +78,18 @@ export const WelcomeView: React.FC<WelcomeViewProps> = ({ onStart }) => {
               </div>
             </button>
 
-            {/* Async PvP */}
+            {/* Real-time PvP */}
             <button 
-              className={`mode-card ${selectedMode === 'async' ? 'selected' : ''}`}
-              onClick={() => setSelectedMode('async')}
+              className={`mode-card ${selectedMode === 'multiplayer' ? 'selected' : ''}`}
+              onClick={() => setSelectedMode('multiplayer')}
             >
-              <div className="mode-icon">🔗</div>
+              <div className="mode-icon">🎮</div>
               <div className="mode-info">
-                <h3>Async PvP</h3>
-                <p>Create a shareable link to play remotely</p>
+                <h3>Play PvP</h3>
+                <p>Real-time match with room codes</p>
               </div>
               <div className="mode-check">
-                {selectedMode === 'async' && <span>✓</span>}
+                {selectedMode === 'multiplayer' && <span>✓</span>}
               </div>
             </button>
           </div>
@@ -121,7 +121,7 @@ export const WelcomeView: React.FC<WelcomeViewProps> = ({ onStart }) => {
             onClick={handleStart}
             disabled={!selectedMode}
           >
-            {selectedMode === 'async' ? 'Create Challenge Link' : 'Start Game'}
+            Start Game
             <span className="btn-arrow">→</span>
           </button>
         </div>

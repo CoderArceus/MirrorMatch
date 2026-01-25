@@ -813,3 +813,119 @@
     font-size: 1.1rem;
   }
 }
+
+/* ============================================
+   Multiplayer Timer & Status
+   ============================================ */
+.timer-display {
+  margin-left: 0.75rem;
+  padding: 0.25rem 0.5rem;
+  background: rgba(139, 92, 246, 0.2);
+  border-radius: 0.25rem;
+  font-size: 0.85rem;
+  color: #a78bfa;
+}
+
+.timer-display.urgent {
+  background: rgba(239, 68, 68, 0.2);
+  color: #ef4444;
+  animation: pulse-urgent 0.5s infinite;
+}
+
+@keyframes pulse-urgent {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.6; }
+}
+
+.multiplayer-info {
+  display: flex;
+  align-items: center;
+  gap: 0.25rem;
+}
+
+.controls-status .sub-status {
+  display: block;
+  font-size: 0.8rem;
+  color: rgba(255, 255, 255, 0.5);
+  margin-top: 0.25rem;
+}
+
+.action-group.burn.disabled {
+  opacity: 0.5;
+  pointer-events: none;
+}
+
+/* ============================================
+   Connection Indicator
+   ============================================ */
+.connection-indicator {
+  margin-left: 0.5rem;
+  font-size: 0.75rem;
+  cursor: help;
+}
+
+.connection-indicator.connecting {
+  animation: blink 1s infinite;
+}
+
+@keyframes blink {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.4; }
+}
+
+/* ============================================
+   Submitting States
+   ============================================ */
+.controls-status.submitting {
+  background: rgba(139, 92, 246, 0.15);
+  border-color: rgba(139, 92, 246, 0.3);
+}
+
+.controls-status.submitting.slow {
+  background: rgba(234, 179, 8, 0.15);
+  border-color: rgba(234, 179, 8, 0.3);
+}
+
+.controls-status.submitting.retrying {
+  background: rgba(239, 68, 68, 0.15);
+  border-color: rgba(239, 68, 68, 0.3);
+}
+
+.controls-status .sub-status.warning {
+  color: rgba(234, 179, 8, 0.9);
+}
+
+/* ============================================
+   Opponent Status
+   ============================================ */
+.opponent-status {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  font-size: 0.85rem;
+  color: rgba(255, 255, 255, 0.6);
+  margin-top: 0.5rem;
+}
+
+.opponent-status.submitted {
+  color: #4ade80;
+}
+
+.opponent-status .status-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: currentColor;
+}
+
+/* ============================================
+   Auction Waiting State
+   ============================================ */
+.controls-status.ready.auction {
+  background: rgba(234, 179, 8, 0.15);
+  border-color: rgba(234, 179, 8, 0.3);
+}
+
+.controls-status.ready.auction .status-icon {
+  font-size: 1.25rem;
+}

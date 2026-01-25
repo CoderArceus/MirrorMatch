@@ -5,11 +5,14 @@
 import React, { useState, useEffect } from 'react';
 import type { GameState, PlayerAction, TurnActions, AIDifficulty } from '../../../engine/src';
 import { getLegalActions } from '../../../engine/src';
+import type { MultiplayerState } from '../multiplayer/types';
 import './GameView.css';
+
+import type { SubmittingStatus } from '../multiplayer/useMultiplayer';
 
 interface GameViewProps {
   gameState: GameState;
-  playMode: 'local' | 'ai' | 'async';
+  playMode: 'local' | 'ai' | 'multiplayer';
   aiDifficulty: AIDifficulty;
   aiThinking: boolean;
   pendingP1: PlayerAction | null;
@@ -17,6 +20,11 @@ interface GameViewProps {
   history: TurnActions[];
   onAction: (player: 'player1' | 'player2', action: PlayerAction) => void;
   onQuit: () => void;
+  // Multiplayer-specific props (optional)
+  multiplayerState?: MultiplayerState;
+  timeRemaining?: number | null;
+  canAct?: boolean;
+  submittingStatus?: SubmittingStatus;
 }
 
 export const GameView: React.FC<GameViewProps> = ({
@@ -29,6 +37,11 @@ export const GameView: React.FC<GameViewProps> = ({
   history,
   onAction,
   onQuit,
+  // Multiplayer props
+  multiplayerState,
+  timeRemaining,
+  canAct: multiplayerCanAct,
+  submittingStatus = 'idle',
 }) => {
   // Auction state
   const [bid, setBid] = useState(0);
@@ -45,9 +58,14 @@ export const GameView: React.FC<GameViewProps> = ({
   // Determine active player for unified controls
   // In local mode: P1 goes first, then P2
   // In AI mode: only P1
+  // In multiplayer: use myRole from state
   const activePlayer: 'player1' | 'player2' = 
+    playMode === 'multiplayer' ? (multiplayerState?.myRole || 'player1') :
     playMode === 'ai' ? 'player1' :
     !pendingP1 ? 'player1' : 'player2';
+  
+  // In multiplayer, actions are disabled when already submitted
+  const isMultiplayerDisabled = playMode === 'multiplayer' && !multiplayerCanAct;
   
   const activePlayerState = activePlayer === 'player1' ? p1 : p2;
   const activeActions = activePlayer === 'player1' ? p1Actions : p2Actions;
@@ -117,8 +135,77 @@ export const GameView: React.FC<GameViewProps> = ({
     );
   };
 
+  // Format time remaining for display
+  const formatTime = (ms: number | null | undefined): string => {
+    if (ms === null || ms === undefined) return '--';
+    const seconds = Math.ceil(ms / 1000);
+    return `${seconds}s`;
+  };
+
   // Render unified controls
   const renderControls = () => {
+    // Multiplayer: currently submitting action (awaiting ACK)
+    if (playMode === 'multiplayer' && submittingStatus !== 'idle' && !multiplayerState?.actionSubmitted) {
+      return (
+        <div className={`controls-status submitting ${submittingStatus}`}>
+          <span className="spinner"></span>
+          {submittingStatus === 'submitting' && (
+            <span>Submitting...</span>
+          )}
+          {submittingStatus === 'slow' && (
+            <>
+              <span>Connection slow — please wait...</span>
+              <span className="sub-status warning">Your action is being sent</span>
+            </>
+          )}
+          {submittingStatus === 'retrying' && (
+            <>
+              <span>Connection issues — retrying...</span>
+              <span className="sub-status warning">Reconnecting to server</span>
+            </>
+          )}
+        </div>
+      );
+    }
+    
+    // Multiplayer: action already submitted (ACK received)
+    if (playMode === 'multiplayer' && multiplayerState?.actionSubmitted) {
+      const opponentName = multiplayerState?.opponent?.displayName || 'Opponent';
+      const isAuction = isAuctionTurn;
+      
+      // Calculate time remaining for opponent display
+      const opponentTimeDisplay = timeRemaining !== null && timeRemaining !== undefined
+        ? Math.ceil(timeRemaining / 1000)
+        : null;
+      
+      return (
+        <div className={`controls-status ready ${isAuction ? 'auction' : ''}`}>
+          <span className="status-icon">{isAuction ? '🎯' : '✓'}</span>
+          <span>{isAuction ? 'Bid locked in' : 'Action submitted'}</span>
+          {multiplayerState?.opponentSubmittedThisTurn ? (
+            <span className="sub-status">
+              {isAuction ? 'Revealing bids...' : 'Resolving turn...'}
+            </span>
+          ) : (
+            <span className="sub-status">
+              {isAuction && opponentTimeDisplay !== null
+                ? `${opponentName} has ${opponentTimeDisplay}s remaining`
+                : `Waiting for ${opponentName}...`
+              }
+            </span>
+          )}
+          {/* Opponent status indicator */}
+          <div className={`opponent-status ${multiplayerState?.opponentSubmittedThisTurn ? 'submitted' : ''}`}>
+            <span className="status-dot"></span>
+            {multiplayerState?.opponentSubmittedThisTurn 
+              ? `${opponentName} has ${isAuction ? 'bid' : 'submitted'}`
+              : `${opponentName} is ${isAuction ? 'bidding' : 'choosing'}...`
+            }
+          </div>
+        </div>
+      );
+    }
+
     // Both players ready - waiting for turn resolution
     if (playMode === 'local' && pendingP1 && pendingP2) {
       return (
@@ -221,11 +308,17 @@ export const GameView: React.FC<GameViewProps> = ({
     const burn = filteredActions.find(a => a.type === 'burn');
     const stands = filteredActions.filter(a => a.type === 'stand') as Array<{ type: 'stand'; targetLane: number }>;
     const blindHits = filteredActions.filter(a => a.type === 'blind_hit') as Array<{ type: 'blind_hit'; targetLane: number }>;
+    
+    // Determine if actions should be disabled
+    const actionsDisabled = isMultiplayerDisabled;
 
     return (
       <div className="controls-actions">
         <div className="controls-player">
-          {activePlayer === 'player1' ? 'Player 1' : 'Player 2'}'s Turn
+          {playMode === 'multiplayer' 
+            ? `Your Turn (${multiplayerState?.myDisplayName || (activePlayer === 'player1' ? 'P1' : 'P2')})`
+            : `${activePlayer === 'player1' ? 'Player 1' : 'Player 2'}'s Turn`
+          }
         </div>
 
         <div className="action-groups">
@@ -241,6 +334,7 @@ export const GameView: React.FC<GameViewProps> = ({
                     key={a.targetLane}
                     className="action-btn"
                     onClick={() => onAction(activePlayer, a)}
+                    disabled={actionsDisabled}
                   >
                     {String.fromCharCode(65 + a.targetLane)}
                   </button>
@@ -250,7 +344,11 @@ export const GameView: React.FC<GameViewProps> = ({
           )}
 
           {burn && (
-            <div className="action-group burn" onClick={() => onAction(activePlayer, burn)} style={{ cursor: 'pointer' }}>
+            <div 
+              className={`action-group burn ${actionsDisabled ? 'disabled' : ''}`} 
+              onClick={() => !actionsDisabled && onAction(activePlayer, burn)} 
+              style={{ cursor: actionsDisabled ? 'not-allowed' : 'pointer' }}
+            >
               <div className="burn-btn-inner">
                 <div className="burn-icon">🔥</div>
                 <div className="burn-text">
@@ -273,6 +371,7 @@ export const GameView: React.FC<GameViewProps> = ({
                     key={a.targetLane}
                     className="action-btn"
                     onClick={() => onAction(activePlayer, a)}
+                    disabled={actionsDisabled}
                   >
                     {String.fromCharCode(65 + a.targetLane)}
                   </button>
@@ -293,6 +392,7 @@ export const GameView: React.FC<GameViewProps> = ({
                     key={a.targetLane}
                     className="action-btn"
                     onClick={() => onAction(activePlayer, a)}
+                    disabled={actionsDisabled}
                   >
                     {String.fromCharCode(65 + a.targetLane)}
                   </button>
@@ -320,11 +420,32 @@ export const GameView: React.FC<GameViewProps> = ({
           <span className="turn-label">Turn</span>
           <span className="turn-number">{gameState.turnNumber}</span>
           {isAuctionTurn && <span className="auction-tag">🎯</span>}
+          {playMode === 'multiplayer' && timeRemaining !== null && timeRemaining !== undefined && (
+            <span className={`timer-display ${timeRemaining < 5000 ? 'urgent' : ''}`}>
+              ⏱️ {formatTime(timeRemaining)}
+            </span>
+          )}
+          {/* Connection health indicator */}
+          {playMode === 'multiplayer' && (
+            <span className={`connection-indicator ${multiplayerState?.connectionState || 'disconnected'}`} title={
+              multiplayerState?.connectionState === 'connected' ? 'Connected' :
+              multiplayerState?.connectionState === 'connecting' ? 'Reconnecting...' : 'Disconnected'
+            }>
+              {multiplayerState?.connectionState === 'connected' && '🟢'}
+              {multiplayerState?.connectionState === 'connecting' && '🟡'}
+              {multiplayerState?.connectionState === 'disconnected' && '🔴'}
+            </span>
+          )}
         </div>
         <div className="mode-display">
           {playMode === 'ai' && `🤖 ${aiDifficulty}`}
           {playMode === 'local' && '👥 Local'}
-          {playMode === 'async' && '🔗 Async'}
+          {playMode === 'multiplayer' && (
+            <span className="multiplayer-info">
+              🎮 {multiplayerState?.myRole === 'player1' ? 'P1' : 'P2'}
+              {multiplayerState?.opponent && ` vs ${multiplayerState.opponent.displayName}`}
+            </span>
+          )}
         </div>
       </header>
 

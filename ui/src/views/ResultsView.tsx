@@ -15,7 +15,7 @@ import './ResultsView.css';
 interface ResultsViewProps {
   gameState: GameState;
   history: TurnActions[];
-  playMode: 'local' | 'ai' | 'async';
+  playMode: 'local' | 'ai' | 'multiplayer';
   onPlayAgain: () => void;
   onQuit: () => void;
 }
